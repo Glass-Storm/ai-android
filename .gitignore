@@ -1,0 +1,20 @@
+# Gradle / Android build output
+build/
+.gradle/
+.cxx/
+local.properties
+
+# Native artifacts
+*.so
+
+# Model / runtime binaries (never commit)
+*.gguf
+*.onnx
+*.tflite
+*.task
+
+# Wave-0 spike is throwaway (deleted in plan todo 32) — keep out of production history
+/spike/
+
+# Keep the Gradle wrapper jar committed for the production build
+!gradle/wrapper/gradle-wrapper.jar
