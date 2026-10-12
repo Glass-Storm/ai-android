@@ -1,0 +1,15 @@
+# Sign segmentation golden set (deterministic synthetic landmarks; no model, no device).
+#
+# Scenario header: window | stride | motionThreshold | frameCount | motionStartInclusive | motionEndExclusive
+# The canonical stream is SegmenterFixtures.stream(frameCount) { index ->
+#   if (index in [motionStart, motionEnd)) MOTION_STEP * index else 0f }.
+config|8|4|0.0|32|8|24
+#
+# Expected boundaries: index | startMillis | endMillis
+# Cadence: a boundary slot occurs at consumed == windowSize then every stride frames. The gate is
+# skipped (without shifting cadence) for the motionless leading window and the motionless trailing window.
+window|0|132|363
+window|1|264|495
+window|2|396|627
+window|3|528|759
+window|4|660|891

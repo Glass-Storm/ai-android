@@ -1,0 +1,20 @@
+# OpenCC script-conversion golden set (deterministic, pure JVM, no model/device).
+# Columns: config | input | expected   (config in {T2S, S2T, S2HK, S2TW})
+# Values are the verified opencc4j 1.13.1 behaviour recorded for todo 16 (see the notepad).
+T2S|軟體|软体
+T2S|香港|香港
+S2T|软件|軟件
+S2HK|软件|軟件
+S2TW|软件|軟體
+S2T|台湾|臺灣
+S2HK|台湾|台灣
+S2TW|台湾|臺灣
+S2T|硬盘|硬盤
+S2HK|硬盘|硬盤
+S2TW|硬盘|硬碟
+S2T|光盘|光盤
+S2HK|光盘|光盤
+S2TW|光盘|光碟
+S2T|打印机|打印機
+S2HK|打印机|打印機
+S2TW|打印机|印表機

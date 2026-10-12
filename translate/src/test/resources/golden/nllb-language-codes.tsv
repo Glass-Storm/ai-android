@@ -1,0 +1,24 @@
+# NLLB-200 language-code golden set (deterministic tag -> FLORES-200 mapping).
+# Columns: language tag | expected FLORES-200 code
+en|eng_Latn
+en-us|eng_Latn
+en-gb|eng_Latn
+eng|eng_Latn
+eng_latn|eng_Latn
+english|eng_Latn
+zh|zho_Hans
+zh-hans|zho_Hans
+zh-cn|zho_Hans
+zh-sg|zho_Hans
+cmn|zho_Hans
+zho_hans|zho_Hans
+mandarin|zho_Hans
+zh-hant|zho_Hant
+zh-tw|zho_Hant
+zh-hk|zho_Hant
+zho_hant|zho_Hant
+yue|yue_Hant
+yue-hant|yue_Hant
+yue-hk|yue_Hant
+yue_hant|yue_Hant
+cantonese|yue_Hant
