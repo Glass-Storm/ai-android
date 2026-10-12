@@ -79,4 +79,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // The end-to-end Tier A test drives the license gate with the real PUBLIC license values: the
+    // shipped WLASL-derived sign spec (`:sign`) and the BYO registration trust path (`:models`).
+    // Both are published public API — no internal/binding class is referenced.
+    testImplementation(project(":models"))
 }
