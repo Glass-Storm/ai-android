@@ -14,6 +14,10 @@ detekt = "1.23.8"
 minSdk = "28"
 compileSdk = "36"
 
+# --- JSON (signed model manifest schema) ---
+# Pure-JVM/Multiplatform, no native code. Kept in sync with the Kotlin 2.1.0 compiler plugin.
+kotlinxSerialization = "1.7.3"
+
 # --- Test stack ---
 coroutines = "1.9.0"
 junit = "4.13.2"
@@ -35,6 +39,7 @@ mediapipe = "0.10.26"
 [libraries]
 # --- Coroutines ---
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 
@@ -58,5 +63,6 @@ mediapipe-tasks-vision = { module = "com.google.mediapipe:tasks-vision", version
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
