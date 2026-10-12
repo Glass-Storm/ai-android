@@ -1,0 +1,45 @@
+package hk.edu.hkmu.core.engine
+
+import hk.edu.hkmu.core.config.Language
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Streaming speech-to-text contract.
+ *
+ * ### Emission semantics (final segments, not partials)
+ * [transcribe] returns a flow of **final transcription segments only**: exactly one
+ * [TranscriptionSegment] per detected utterance/segment, in chronological order. It does **not**
+ * emit token-level or partial/interim hypotheses — the underlying SenseVoice recognizer is an
+ * offline, whole-segment model, so no streaming partial exists to expose. Every emitted segment
+ * therefore has `isFinal == true`. The flow completes normally after the last segment.
+ *
+ * ### Cancellation
+ * Cancelling collection must release the native session and stop all further emissions; no segment
+ * may be delivered after cancellation.
+ *
+ * ### Backpressure
+ * Implementations bridge the native callback with `callbackFlow`/`channelFlow`. Where a native
+ * thread can outrun the collector, use non-suspending `trySendBlocking` on the producer side so the
+ * native callback applies backpressure instead of dropping a final segment.
+ */
+fun interface AsrEngine {
+    /** Transcribes [audio] into ordered final segments. */
+    fun transcribe(audio: Flow<AudioChunk>): Flow<TranscriptionSegment>
+}
+
+/**
+ * A finalized ASR segment.
+ *
+ * @property text Recognized text for the segment.
+ * @property startTimeMillis Segment start, milliseconds from the start of the audio stream.
+ * @property endTimeMillis Segment end, milliseconds from the start of the audio stream.
+ * @property isFinal Always true: this engine does not emit partials.
+ * @property language Language of [text] when known.
+ */
+data class TranscriptionSegment(
+    val text: String,
+    val startTimeMillis: Long,
+    val endTimeMillis: Long,
+    val isFinal: Boolean = true,
+    val language: Language? = null
+)
