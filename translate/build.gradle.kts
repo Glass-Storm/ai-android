@@ -33,6 +33,7 @@ kotlin {
 dependencies {
     implementation(project(":core"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.opencc4j)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

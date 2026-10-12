@@ -109,4 +109,10 @@ sealed class AiAndroidException(
         val dependency: String,
         cause: Throwable? = null
     ) : AiAndroidException("Missing dependency '$dependency'", cause)
+
+    /** Script conversion (e.g. zh-Hant↔zh-Hans) failed for an unknown configuration id. */
+    class ScriptConversionError(
+        val configId: String,
+        cause: Throwable? = null
+    ) : AiAndroidException("Script conversion error for config '$configId'", cause)
 }
