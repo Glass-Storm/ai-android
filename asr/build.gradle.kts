@@ -34,6 +34,10 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.kotlinx.coroutines.core)
 
+    // Vendored sherpa-onnx AAR (NOT on Maven Central; see settings.gradle.kts flatDir + S4 decision P1).
+    // It already bundles libonnxruntime.so, so onnxruntime-android must NOT be added alongside it.
+    implementation(files(rootProject.file("libs/sherpa-onnx-${libs.versions.sherpaOnnx.get()}.aar")))
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)

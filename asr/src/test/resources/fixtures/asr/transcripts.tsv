@@ -1,0 +1,8 @@
+# Held-out ASR fixture set (16 kHz mono 16-bit PCM WAV).
+# Columns: fixture file <TAB> expected transcript <TAB> note
+# The transcripts are what the SenseVoice model is expected to emit for each clip on-device.
+# This set is intentionally non-speech and model-free (no real model may be bundled/fetched here);
+# the real-model transcription run is Tier B (device only, see SenseVoiceDeviceTierBTest).
+silence_0.5s_16k_mono.wav		no speech -> empty transcript
+tone_440hz_0.5s_16k_mono.wav		non-speech 440 Hz tone -> empty transcript
+noise_0.5s_16k_mono.wav		non-speech broadband noise -> empty transcript
