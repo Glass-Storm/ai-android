@@ -157,6 +157,9 @@ tasks.register("verifyNativeAlignment") {
     description =
         "Asserts 16 KB (0x4000) PT_LOAD alignment of every vendored .so via core ElfAlignmentVerifier."
     dependsOn(":core:compileReleaseKotlin", ":recombine:assembleRelease")
+    // Also runs the spike-absence packaging gate (todo 32) so the documented verification command
+    // covers both packaging invariants.
+    dependsOn("verifyNoSpikeInPublishedGraph")
 
     val engineArtifacts = engineResolution
     val coreClassesDir = project(":core").layout.buildDirectory.dir("tmp/kotlin-classes/release")
@@ -226,6 +229,93 @@ tasks.register("verifyNativeAlignment") {
         check(scanned > 0) { "no .so files were scanned — alignment gate would be vacuous" }
         if (failures.isNotEmpty()) {
             throw GradleException("16 KB ELF alignment FAILED for: ${failures.joinToString()}")
+        }
+    }
+}
+
+// --- Spike-absence packaging gate (todo 32) --------------------------------------------------
+// The wave-0 `spike/` build is throwaway and is deleted in this task. This gate makes that a
+// mechanical invariant, not a convention:
+//   * (graph) no subproject named like `spike` may be part of THIS Gradle build, and the on-disk
+//     `spike/` tree must be gone;
+//   * (packaging) no published release AAR may contain a `spike` path entry or a
+//     `hk/edu/hkmu/spike` class.
+// The adversarial switch `-Ptask32.probeSpikeAar=<file>` also audits an extra AAR, so a spike
+// module leaking into a published artifact can be shown to FAIL this task (QA failure scenario).
+val publishedModules = listOf("core", "asr", "tts", "translate", "sign", "recombine", "models", "testkit")
+
+tasks.register("verifyNoSpikeInPublishedGraph") {
+    group = "verification"
+    description = "Asserts no spike/ code is in the production Gradle graph or any published release AAR."
+    dependsOn(publishedModules.map { ":$it:assembleRelease" })
+    val probeAar = providers.gradleProperty("task32.probeSpikeAar")
+
+    doLast {
+        // (graph) no spike project, and the throwaway tree is deleted.
+        val spikeProjects = rootProject.subprojects.filter { sub -> sub.name.contains("spike", ignoreCase = true) }
+        check(spikeProjects.isEmpty()) {
+            "spike project(s) leaked into the Gradle graph: ${spikeProjects.map { it.path }}"
+        }
+        val spikeDir = rootProject.file("spike")
+        check(!spikeDir.exists()) { "throwaway spike/ tree still present at ${spikeDir.absolutePath}" }
+        logger.lifecycle(
+            "spike-absence[graph]: no 'spike' project among ${rootProject.subprojects.size} subprojects; " +
+                "spike/ tree absent on disk"
+        )
+
+        // (packaging) no spike entry in any published release AAR.
+        val aars = mutableListOf<File>()
+        publishedModules
+            .map { module -> rootProject.file("$module/build/outputs/aar/$module-release.aar") }
+            .filter { file -> file.isFile }
+            .forEach { aars += it }
+        probeAar.orNull?.let { aars += File(it) }
+        check(aars.isNotEmpty()) { "no release AARs found — spike-absence gate would be vacuous" }
+
+        fun isSpikeEntry(entry: String): Boolean {
+            val panic = entry.startsWith("hk/edu/hkmu/spike/")
+            val segment = entry.split('/').any { seg -> seg.equals("spike", ignoreCase = true) }
+            return panic || segment
+        }
+
+        // A spike module would land as `hk/edu/hkmu/spike/**` INSIDE the AAR's nested `classes.jar`,
+        // so scan the nested jars, not just the top-level AAR entry names.
+        fun spikeHits(aar: File): List<String> {
+            val hits = mutableListOf<String>()
+            java.util.zip.ZipFile(aar).use { zip ->
+                zip.entries().asSequence().forEach { entry ->
+                    val name = entry.name
+                    if (name.endsWith(".jar") && !entry.isDirectory) {
+                        java.util.zip.ZipInputStream(zip.getInputStream(entry)).use { nested ->
+                            var nestedEntry = nested.nextEntry
+                            while (nestedEntry != null) {
+                                if (isSpikeEntry(nestedEntry.name)) {
+                                    hits += "$name!${nestedEntry.name}"
+                                }
+                                nestedEntry = nested.nextEntry
+                            }
+                        }
+                    } else if (isSpikeEntry(name)) {
+                        hits += name
+                    }
+                }
+            }
+            return hits
+        }
+
+        val table = mutableListOf<String>()
+        val failures = mutableListOf<String>()
+        aars.sortedBy { it.name }.forEach { aar ->
+            val hits = spikeHits(aar)
+            val entryCount = java.util.zip.ZipFile(aar).use { zip -> zip.size() }
+            val verdict = if (hits.isEmpty()) "CLEAN" else "SPIKE-LEAK"
+            table += String.format("%-34s entries=%-4d spike_entries=%d %s", aar.name, entryCount, hits.size, verdict)
+            if (hits.isNotEmpty()) failures += "${aar.name} -> ${hits.take(5)}"
+        }
+        logger.lifecycle("=== spike-absence audit (published release AARs) ===")
+        table.forEach { logger.lifecycle(it) }
+        if (failures.isNotEmpty()) {
+            throw GradleException("spike/ code found in published AAR(s): ${failures.joinToString()}")
         }
     }
 }

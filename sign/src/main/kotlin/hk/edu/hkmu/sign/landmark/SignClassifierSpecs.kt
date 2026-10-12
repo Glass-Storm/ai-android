@@ -1,7 +1,7 @@
 package hk.edu.hkmu.sign.landmark
 
 /**
- * Per-classifier input contracts derived from the Wave-0 S2 adapter spec (`spike/sign/ADAPTER_SPEC.md`).
+ * Per-classifier input contracts derived from the Wave-0 S2 adapter spec (recorded in the task evidence).
  *
  * Both entries describe the **same** WLASL TGCN model, exported two ways: the ONNX/training graph
  * wants node-major `[1, 55, 100]`, while the onnx2tf-exported TFLite graph wants the transpose

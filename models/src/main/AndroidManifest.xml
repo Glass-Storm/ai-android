@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      The downloader's AndroidNetworkMonitor reads ConnectivityManager network state (metered vs
+      unmetered) to apply the network policy on `ModelStore.download`. AGP merges this into the
+      consumer's manifest, so a host does not have to declare it separately.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+</manifest>

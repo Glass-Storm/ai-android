@@ -8,7 +8,7 @@ package hk.edu.hkmu.sign.landmark
  * the same normalization code serves a 55-keypoint TGCN stream and a 42-keypoint hands-only stream.
  *
  * ### S2 spec gap (open)
- * The Phase-0 spike (`spike/sign/ADAPTER_SPEC.md` §5) flagged that the WLASL TGCN's 55-keypoint
+ * The Phase-0 spike (S2 §5) flagged that the WLASL TGCN's 55-keypoint
  * order is **unverified**: the WACV-2020 paper describes OpenPose 55 = 13 upper-body + 21L + 21R, but
  * the repo publishes no preprocessing code. [UPPER_BODY_HANDS] therefore uses a documented,
  * overridable default selection ([DEFAULT_UPPER_BODY_POSE_INDICES]); a caller who has verified a

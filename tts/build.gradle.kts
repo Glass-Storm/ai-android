@@ -62,7 +62,7 @@ dependencies {
     // that packages sherpa-onnx (duplicate .so => mergeNativeLibs failure).
     // Resolved as a flatDir MODULE dep (not `files(...)`): AGP refuses to build an AAR whose direct
     // dependency is a local .aar file (`hasLocalAarDeps`), which breaks `:tts:assembleRelease`.
-    implementation(mapOf("name" to "sherpa-onnx-1.13.8", "ext" to "aar"))
+    implementation(mapOf("name" to "sherpa-onnx-${libs.versions.sherpaOnnx.get()}", "ext" to "aar"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
