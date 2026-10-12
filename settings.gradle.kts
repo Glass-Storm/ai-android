@@ -38,3 +38,6 @@ include(":sign")
 include(":recombine")
 include(":models")
 include(":testkit")
+// Unpublished API-boundary fixture. It is NOT part of the published AAR set and is never shipped;
+// it exists only to prove the library compiles against its public API from a minified consumer.
+include(":consumer-fixture")
