@@ -18,3 +18,7 @@ local.properties
 
 # Keep the Gradle wrapper jar committed for the production build
 !gradle/wrapper/gradle-wrapper.jar
+
+# Tool caches (Kotlin daemon, Python/ruff)
+.kotlin/
+.ruff_cache/
