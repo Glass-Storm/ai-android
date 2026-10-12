@@ -35,6 +35,10 @@ onnxruntime = "1.20.0"
 opencc4j = "1.13.1"
 litert = "1.4.2"
 mediapipe = "0.10.26"
+# NLLB tokenizer (translation module). Host/JVM SentencePiece JNI per the Wave-0 S1 recipe.
+# NOTE: this artifact ships NO Android native (linux/macOS/Windows only) — see task-15 notepad
+# for the Android tokenizer risk and the `ai.djl.android:tokenizer-native` alternative.
+djlSentencepiece = "0.33.0"
 
 [libraries]
 # --- Coroutines ---
@@ -55,6 +59,8 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "android
 onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
 # OpenCC traditional/simplified conversion (pure-JVM).
 opencc4j = { module = "com.github.houbb:opencc4j", version.ref = "opencc4j" }
+# SentencePiece JNI used by the NLLB translation tokenizer (host JVM; no Android native).
+djl-sentencepiece = { module = "ai.djl.sentencepiece:sentencepiece", version.ref = "djlSentencepiece" }
 # LiteRT (successor of TFLite) Android runtime AAR.
 litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
 # MediaPipe Tasks Vision (hand/holistic landmarks) — from Google Maven.

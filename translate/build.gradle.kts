@@ -35,6 +35,12 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.opencc4j)
 
+    // ONNX Runtime (NLLB encoder + decoder). Do NOT add this to a module that also packages the
+    // vendored sherpa-onnx AAR — sherpa already bundles libonnxruntime.so (duplicate .so).
+    implementation(libs.onnxruntime.android)
+    // SentencePiece JNI for the NLLB tokenizer (host/JVM; no Android native — see task-15 notes).
+    implementation(libs.djl.sentencepiece)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
