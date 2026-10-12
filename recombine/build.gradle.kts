@@ -8,6 +8,11 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
+// Scratch switch (todo 30 packaging verification ONLY): when `-Ptask30.disableConsumerRules` is set,
+// the shipped consumer rules are dropped so the minified consumer APK can be shown to LOSE the named
+// JNI bindings — proving the keep rules are non-vacuous. Never set for a real build.
+val task30DisableConsumerRules = providers.gradleProperty("task30.disableConsumerRules").isPresent
+
 android {
     namespace = "hk.edu.hkmu.recombine"
     compileSdk = 36
@@ -16,16 +21,30 @@ android {
 
     defaultConfig {
         minSdk = 28
+        if (!task30DisableConsumerRules) {
+            consumerProguardFiles("consumer-rules.pro")
+        }
 
         ndk {
-            // Production ABI is arm64-v8a; x86_64 is test-only.
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            // Production ABI is arm64-v8a ONLY. Test-only ABIs (x86_64) are added for the debug
+            // variant below and must never reach the shipped release AAR.
+            abiFilters.clear()
+            abiFilters += "arm64-v8a"
         }
 
         externalNativeBuild {
             cmake {
                 // 16KB ELF page alignment (Android 15+ devices). Default NDK 27 emits 4KB.
                 arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            ndk {
+                // x86_64 is TEST-ONLY (emulator instrumented tests). The release AAR stays arm64-only.
+                abiFilters += "x86_64"
             }
         }
     }

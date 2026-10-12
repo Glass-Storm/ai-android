@@ -41,6 +41,16 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
     }
+
+    packaging {
+        jniLibs {
+            // UNPUBLISHED fixture: it inspects DEX only and never runs a native lib. Each engine module
+            // ships exactly ONE ONNX Runtime source (sherpa's bundled libonnxruntime.so in :asr/:tts vs
+            // onnxruntime-android's in :translate) — aggregating them here would otherwise collide in
+            // mergeReleaseNativeLibs. Strip every native lib so the fixture stays a pure DEX/R8 probe.
+            excludes += "**/*.so"
+        }
+    }
 }
 
 kotlin {
@@ -56,6 +66,16 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":testkit"))
     implementation(libs.kotlinx.coroutines.core)
+
+    // Engine modules are brought in ONLY so their shipped consumer ProGuard rules (proguard.txt in
+    // each AAR) are applied to this minified consumer. The fixture NEVER references a binding class:
+    // it stays on the public API, per todo 12. Todo 30 greps the minified APK to prove the consumer
+    // rules retain the named JNI-bound classes/methods even though nothing here uses them.
+    implementation(project(":asr"))
+    implementation(project(":tts"))
+    implementation(project(":translate"))
+    implementation(project(":sign"))
+    implementation(project(":recombine"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
