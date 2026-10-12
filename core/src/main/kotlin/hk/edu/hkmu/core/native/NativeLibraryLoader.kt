@@ -11,7 +11,7 @@ data class LoadedNativeLibrary(
 )
 
 /**
- * Performs the actual native load for a logical [libraryName] on the given [abi].
+ * Performs the actual native load for a logical `libraryName` on the given `abi`.
  *
  * A missing library is expected to fail with a [LinkageError] (typically
  * [UnsatisfiedLinkError]). Injectable so tests can observe and fault-inject loads without a
@@ -23,7 +23,7 @@ fun interface NativeLibraryBridge {
 
 /**
  * [NativeLibraryBridge] backed by `System.loadLibrary`, which resolves the ABI from the installed
- * APK's `jniLibs`. The [abi] argument is carried for diagnostics only.
+ * APK's `jniLibs`. The `abi` argument is carried for diagnostics only.
  */
 class SystemNativeLibraryBridge : NativeLibraryBridge {
     override fun load(libraryName: String, abi: AndroidAbi) {
@@ -50,14 +50,14 @@ class NativeLibraryLoader(
 ) {
     private val loaded = ConcurrentHashMap<String, LoadedNativeLibrary>()
 
-    /** @return true when [libraryName] has already been loaded successfully. */
+    /** @return true when `libraryName` has already been loaded successfully. */
     fun isLoaded(libraryName: String): Boolean = loaded.containsKey(libraryName)
 
-    /** @return the already-loaded library for [libraryName], or `null` when not yet loaded. */
+    /** @return the already-loaded library for `libraryName`, or `null` when not yet loaded. */
     fun loadedOrNull(libraryName: String): LoadedNativeLibrary? = loaded[libraryName]
 
     /**
-     * Loads [libraryName] for the resolved ABI, invoking the native bridge at most once.
+     * Loads `libraryName` for the resolved ABI, invoking the native bridge at most once.
      *
      * @throws AiAndroidException.NativeLibraryMissing when the library cannot be loaded for the
      *   resolved ABI; the exception's `expectedAbiPath` names the missing file.

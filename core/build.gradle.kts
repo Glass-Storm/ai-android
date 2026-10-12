@@ -3,6 +3,22 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
+}
+
+dokka {
+    dokkaPublications.html {
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(providers.gradleProperty("task31.reportUndocumented").isPresent)
+    }
+}
+
+// DGP v2 keeps `dokkaHtml` as a V1 stub that throws when executed; neutralise it so a whole-tree
+// `./gradlew dokkaHtml` does not fail. The root task drives the real generation.
+tasks.named("dokkaHtml") {
+    actions.clear()
 }
 
 android {

@@ -8,6 +8,10 @@ agp = "8.13.0"
 kotlin = "2.1.0"
 ktlint = "12.1.2"
 detekt = "1.23.8"
+# Dokka Gradle plugin (DGP) v2. From Dokka 2.1.0 on, DGP v2 is the default mode (no real
+# `dokkaHtml` task; the HTML publication task is `dokkaGeneratePublicationHtml`). The root build
+# wires the leftover V1 `dokkaHtml` stub to that v2 task. 2.2.0 supports Kotlin 2.1.x / AGP 7.0+.
+dokka = "2.2.0"
 
 # --- SDK levels (also referenced from module build scripts) ---
 # kept here as documentation; concrete values live in each module's android {} block
@@ -75,3 +79,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

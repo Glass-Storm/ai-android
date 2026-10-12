@@ -18,12 +18,12 @@ fun interface PssProbe {
 class PeakPssRecorder {
     private val peaks = ConcurrentHashMap<MemoryBudget, Long>()
 
-    /** Keeps the maximum of the recorded and current [sampleBytes] for [budget]. */
+    /** Keeps the maximum of the recorded and current [sampleBytes] for `budget`. */
     fun record(budget: MemoryBudget, sampleBytes: Long) {
         peaks.merge(budget, sampleBytes) { existing, current -> if (current > existing) current else existing }
     }
 
-    /** Peak recorded for [budget], or null when it was never sampled. */
+    /** Peak recorded for `budget`, or null when it was never sampled. */
     fun peak(budget: MemoryBudget): Long? = peaks[budget]
 
     /** Snapshot of every recorded peak. */
@@ -31,7 +31,7 @@ class PeakPssRecorder {
 }
 
 /**
- * Samples [probe] around [block] and records the peak for [budget].
+ * Samples [probe] around `block` and records the peak for `budget`.
  *
  * One sample is taken before the block starts, then the probe is polled every [intervalMillis] until
  * the block returns, and once more after it. That leading sample guarantees a value even for an
@@ -46,7 +46,7 @@ class SamplingPssMonitor(
     private val recorder: PeakPssRecorder,
     private val intervalMillis: Long = DEFAULT_INTERVAL_MILLIS
 ) {
-    /** Runs [block] while sampling [probe], recording the peak against [budget]. */
+    /** Runs `block` while sampling [probe], recording the peak against `budget`. */
     fun monitor(budget: MemoryBudget, block: () -> Unit) {
         recorder.record(budget, probe.pssBytes())
         val sampler = Thread { poll(budget) }

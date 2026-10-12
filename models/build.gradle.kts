@@ -4,7 +4,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
 }
+
+dokka {
+    dokkaPublications.html {
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(providers.gradleProperty("task31.reportUndocumented").isPresent)
+    }
+}
+
+tasks.named("dokkaHtml") { actions.clear() }
 
 android {
     namespace = "hk.edu.hkmu.models"

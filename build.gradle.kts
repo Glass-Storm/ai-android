@@ -6,6 +6,45 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.dokka)
+}
+
+// --- API documentation (Dokka Gradle plugin v2, version pinned in the catalog) ------------------
+// Every library module applies `org.jetbrains.dokka`; this root project aggregates their HTML into
+// a single publication at build/dokka/html. `failOnWarning` makes every Dokka warning fatal, and
+// `reportUndocumented` (opt-in via -Ptask31.reportUndocumented) turns an undocumented public
+// declaration into such a warning, so the gate can be shown to be real.
+// DGP v2 renamed the old `dokkaHtml` task to `dokkaGeneratePublicationHtml` and leaves `dokkaHtml`
+// behind as a V1 compatibility stub whose action throws if executed. The stub is turned into a thin
+// no-op that depends on the v2 publication task, so the documented `./gradlew dokkaHtml` command
+// drives the real generator. Subproject stubs are neutralised the same way in their build scripts.
+val reportUndocumentedProbe = providers.gradleProperty("task31.reportUndocumented").isPresent
+
+dokka {
+    dokkaPublications.html {
+        moduleName.set("ai-android")
+        outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(reportUndocumentedProbe)
+    }
+}
+
+dependencies {
+    dokka(project(":core"))
+    dokka(project(":asr"))
+    dokka(project(":tts"))
+    dokka(project(":translate"))
+    dokka(project(":sign"))
+    dokka(project(":recombine"))
+    dokka(project(":models"))
+    dokka(project(":testkit"))
+}
+
+tasks.named("dokkaHtml") {
+    actions.clear()
+    dependsOn(tasks.named("dokkaGeneratePublicationHtml"))
 }
 
 // --- Engine dependency resolution gate -------------------------------------------------

@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.flowOn
  * blocked model.
  *
  * ### Windows
- * The window length is the **model's** contract ([SignModelSpec.windowFrames], e.g. 50 for TGCN, 30
+ * The window length is the **model's** contract (`SignModelSpec.windowFrames`, e.g. 50 for TGCN, 30
  * for SignBridge fingerspelling); [SignConfig.stride] controls how far the window advances between
  * predictions, so consecutive windows overlap when `stride < windowFrames`. One [SignPrediction] is
  * emitted per completed window and the flow completes with the input flow; cancelling collection

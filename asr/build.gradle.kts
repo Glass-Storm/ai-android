@@ -3,7 +3,19 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
 }
+
+dokka {
+    dokkaPublications.html {
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(providers.gradleProperty("task31.reportUndocumented").isPresent)
+    }
+}
+
+tasks.named("dokkaHtml") { actions.clear() }
 
 // Scratch switch (todo 30 packaging verification ONLY): when `-Ptask30.disableConsumerRules` is set,
 // the shipped consumer rules are dropped so the minified consumer APK can be shown to LOSE the named

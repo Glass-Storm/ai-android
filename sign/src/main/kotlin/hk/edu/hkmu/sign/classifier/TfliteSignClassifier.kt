@@ -47,7 +47,7 @@ internal class TfliteSignClassifier private constructor(
     }
 
     /**
-     * Builds a [TfliteSignClassifier] by loading [modelFile] into a fresh LiteRT [Interpreter].
+     * Builds a [TfliteSignClassifier] by loading `modelFile` into a fresh LiteRT [Interpreter].
      *
      * The interpreter is created only here, so merely referencing the factory in host code never
      * loads the native library.

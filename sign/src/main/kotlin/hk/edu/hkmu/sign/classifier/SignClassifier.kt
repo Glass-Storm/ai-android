@@ -22,7 +22,7 @@ internal interface SignClassifier : AutoCloseable {
     override fun close() {}
 }
 
-/** Builds a [SignClassifier] for [spec] from its resolved [modelFile]. */
+/** Builds a [SignClassifier] for `spec` from its resolved `modelFile`. */
 internal fun interface SignClassifierFactory {
     /** @throws hk.edu.hkmu.core.error.AiAndroidException when the graph cannot be loaded. */
     fun create(spec: SignModelSpec, modelFile: File): SignClassifier

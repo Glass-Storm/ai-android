@@ -92,7 +92,7 @@ class SherpaTtsEngine internal constructor(
     /**
      * Emits the synthesized utterance converted to 16-bit PCM, in order.
      *
-     * This is the [Float32]→[Int16] boundary; see `hk.edu.hkmu.tts.pcm.toInt16`.
+     * This is the `Float32`→`Int16` boundary; see `hk.edu.hkmu.tts.pcm.toInt16`.
      */
     fun synthesizeInt16(text: String): Flow<Int16Chunk> = channelFlow {
         val audio = synthesizeInternal(text)

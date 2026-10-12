@@ -19,7 +19,7 @@ data class InitializedBackend<K : BackendKnob>(
  * Deterministically initializes a [BackendPlan], falling back to the next attempt when an
  * accelerator fails to initialize.
  *
- * Attempts are tried in plan order (primary first) and an attempt succeeds when [binder] returns
+ * Attempts are tried in plan order (primary first) and an attempt succeeds when `binder` returns
  * without throwing. Two failure shapes trigger the fallback:
  *  1. the binder raises [AiAndroidException.AcceleratorUnavailable] — the engine's explicit signal
  *     that the accelerator cannot be used; or

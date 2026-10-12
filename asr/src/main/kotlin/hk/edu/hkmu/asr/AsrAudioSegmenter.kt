@@ -38,7 +38,7 @@ private const val MILLIS_PER_SECOND = 1_000L
  * it (trailing silence is trimmed). Utterances shorter than [AsrSegmenterConfig.minSpeechFrames] are
  * dropped as noise. Reaching [AsrSegmenterConfig.maxUtteranceFrames] force-closes the utterance.
  *
- * This class is **not** thread-safe; one instance is created per [asr] flow collection.
+ * This class is **not** thread-safe; one instance is created per ASR flow collection.
  */
 internal class AsrAudioSegmenter(
     private val sampleRateHz: Int,
