@@ -29,3 +29,6 @@ local.properties
 
 # Vendored binary AAR (fetch via scripts/fetch-sherpa-aar.sh)
 libs/*.aar
+
+# Demo media + non-public sign models: packaged into the demo APK, not committed
+/demo-app/src/main/assets/
