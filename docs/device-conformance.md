@@ -177,3 +177,70 @@ When no device is attached the guard writes `build/tier-b/device-conformance-ski
 (task, reason, remedy) and the run still exits `BUILD SUCCESSFUL`. `adb devices -l`, the Gradle log,
 and the artifact together form the `SKIPPED: no device` evidence recorded under
 `.omo/evidence/task-28-ondevice-sign-asr-tts.{log,md}`.
+
+## 7. Per-image gesture performance harness (§8, arm64)
+
+`sign/src/androidTest/…/GestureRecognizerPerfDeviceTest.kt` is the runnable half of deliverable §8:
+it measures the per-image MediaPipe gesture path (`MediaPipeGestureRecognizer.recognize(bitmap)`) on a
+**physical arm64 phone** and logs the numbers. MediaPipe Tasks Vision is arm64-v8a only, so the numbers
+must be produced there — the harness is a no-op on the x86_64 emulator and in CI.
+
+It uses the same construction as the §9 `GestureScenario` demo
+(`MediaPipeGestureRecognizer.create(context, modelDir)` with the default `gesture_recognizer.task`
+entry) and the same provisioning path. To stay deterministic and camera-free it reuses a fixed set of
+bitmaps across every iteration — it never opens the camera or the mp4.
+
+**Input matters.** For representative per-image _hand-gesture_ latency, provision hand-bearing PNG
+stills at `/data/local/tmp/sign/gesture/frames/*.png` (one per sign of interest); the harness decodes
+them (sorted by name) and reuses them. With a real hand, MediaPipe runs the full palm-detection →
+hand-landmark → gesture-classification chain. Without them the harness falls back to a synthetic
+gradient, which contains no hand: MediaPipe then short-circuits after palm detection, so the number is
+a **detection-only floor**, not full gesture latency. The mode is always tagged in the `PERF` line
+(`input=frames` vs `input=synthetic`).
+
+- Skips (`Assume`) when the ABI is not `arm64-v8a` **or** the gesture bundle is not provisioned; it
+  never fails on a machine without the model.
+- `loadMs` is the **cold** first recognize, which includes the lazy native `.task` load; `p50Ms`/`p90Ms`
+  are the **warm** steady-state per-image latency percentiles over `iterations` (30 ≥ 20);
+  `rssDeltaKb` is the resident (total PSS) delta in KB across the run.
+- Run this class **in isolation** (the command below does) so the pre-`create` PSS baseline is not
+  polluted by another suite having already loaded the MediaPipe native library.
+
+### Run it
+
+```bash
+export JAVA_HOME=/path/to/jdk-21
+adb devices -l                       # must list an arm64 `device`
+# Provision the SAME bundle the demo uses (gesture/gesture_recognizer.task):
+adb push gesture_recognizer.task /data/local/tmp/sign/gesture/gesture_recognizer.task
+# Optional, but required for REPRESENTATIVE numbers: hand-bearing stills (else input=synthetic floor):
+adb push frames/ /data/local/tmp/sign/gesture/frames/
+./gradlew :sign:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=hk.edu.hkmu.sign.GestureRecognizerPerfDeviceTest
+```
+
+Drop the `-Pandroid.testInstrumentationRunnerArguments.class=…` argument to run the whole `:sign`
+instrumented suite (the perf harness runs alongside the conformance tests).
+
+### Reading `PERF gesture …`
+
+One greppable structured line is emitted per run (plus two human-readable `PERF gesture detail/memory`
+lines):
+
+```
+PERF gesture loadMs=<n> p50Ms=<n> p90Ms=<n> rssDeltaKb=<n> iterations=<n> abi=<arm64-v8a> input=<frames|synthetic>
+```
+
+| Token             | Meaning                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `loadMs`          | Cold first `recognize`: native `.task` model load + first inference, in ms.               |
+| `p50Ms` / `p90Ms` | Warm per-image recognize latency percentiles (nearest-rank) over `iterations`, in ms.     |
+| `rssDeltaKb`      | `totalPss` after the warm loop minus `totalPss` before `create`, in KB (signed).          |
+| `iterations`      | Number of timed warm recognizes (fixed at 30).                                            |
+| `abi`             | Process ABI; `arm64-v8a` on the phone that produced the numbers.                          |
+| `input`           | `frames` (hand-bearing stills → full gesture path) or `synthetic` (detection-only floor). |
+
+No figures are hardcoded: the line is only ever produced by a real device run. Because every token is
+captured behind an `Assume`, an emulator or CI run skips these cases and produces **no** `PERF` line —
+assumption skips surface in the JUnit report (not reliably on the Gradle console); the console-visible
+signal is the root guard's `SKIPPED: no device` artifact, exactly like the other Tier B suites.
