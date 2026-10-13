@@ -46,6 +46,12 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+    // The sign module exposes the synthetic-landmark fixtures (`hk.edu.hkmu.testkit.sign`) that a
+    // headless host CI feeds to the public `SignPipeline.recognizeLandmarks` seam, so `:testkit`'s
+    // public API references `:sign` types (`SignClassifier`, `SignModelSpec`, `SignPipeline`, ...).
+    // It is declared `implementation`, matching the existing `:core` pattern. The dependency is
+    // one-way (`:testkit` -> `:sign`); `:sign` never depends on `:testkit` main, so there is no cycle.
+    implementation(project(":sign"))
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit)

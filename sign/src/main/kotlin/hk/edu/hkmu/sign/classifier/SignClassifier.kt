@@ -4,13 +4,20 @@ import hk.edu.hkmu.sign.model.SignModelSpec
 import java.io.File
 
 /**
- * Narrow internal seam over one sign-classifier graph.
+ * Low-level seam over one sign-classifier graph: window tensor in, raw logits out.
  *
  * Confining every `org.tensorflow.lite.*` type to [TfliteSignClassifier] keeps Tier A tests free of
- * the native LiteRT runtime and of a real model: the engine depends only on this interface, and tests
- * inject a fake through [SignClassifierFactory].
+ * the native LiteRT runtime and of a real model. It is **public** so a host — or a headless CI via
+ * `:testkit` — can supply its own classifier (e.g. a deterministic fake) and drive the full
+ * segmentation → normalization → classification path through
+ * [hk.edu.hkmu.sign.pipeline.SignPipeline.recognizeLandmarks] with no device and no native library.
+ * A classifier produced by a caller-supplied [SignClassifierFactory] is installed through the public
+ * [hk.edu.hkmu.sign.SignClassifierRegistry] constructor that takes such a factory.
+ *
+ * This is a `fun interface`, so a caller may also provide a bare lambda:
+ * `SignClassifier { input -> logits }`.
  */
-internal interface SignClassifier : AutoCloseable {
+fun interface SignClassifier : AutoCloseable {
     /**
      * Runs the classifier over a fully-assembled window tensor and returns raw `[classCount]` logits.
      *
@@ -22,8 +29,15 @@ internal interface SignClassifier : AutoCloseable {
     override fun close() {}
 }
 
-/** Builds a [SignClassifier] for `spec` from its resolved `modelFile`. */
-internal fun interface SignClassifierFactory {
+/**
+ * Builds a [SignClassifier] for `spec` from its resolved `modelFile`.
+ *
+ * Public so hosts and headless tests can inject a classifier graph (typically a fake) into a
+ * [hk.edu.hkmu.sign.SignClassifierRegistry] without the LiteRT native runtime. The default
+ * (production) factory is [TfliteSignClassifier.Factory], used by the registry's shipped
+ * constructor; this seam does not change TFLite behavior.
+ */
+fun interface SignClassifierFactory {
     /** @throws hk.edu.hkmu.core.error.AiAndroidException when the graph cannot be loaded. */
     fun create(spec: SignModelSpec, modelFile: File): SignClassifier
 }

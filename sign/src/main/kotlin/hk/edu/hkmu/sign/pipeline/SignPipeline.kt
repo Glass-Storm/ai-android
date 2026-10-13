@@ -84,13 +84,18 @@ class SignPipeline internal constructor(
     }
 
     /**
-     * Extraction-free composition seam: the pipeline from assembled landmark frames onward.
+     * Extraction-free composition seam: the pipeline from assembled [LandmarkFrame]s onward
+     * (segmentation → normalization → classification → optional recombination).
      *
-     * Exposed for host JVM tests and hosts that extract landmarks themselves; [recognize] is the
-     * production entry. The MediaPipe native extraction boundary is device-only, so Tier A exercises
-     * this seam with synthetic landmarks (mirroring how `sign.landmark` is tested).
+     * Public so a host or a headless CI can drive the pipeline with landmarks it extracted itself —
+     * or with synthetic ones from `:testkit` — **without** the device-only MediaPipe extraction
+     * boundary. [recognize] remains the production entry that starts from decoded [VideoFrame]s; this
+     * seam is for callers that already own landmark extraction or need to run on a plain JVM.
+     *
+     * Behavior is identical to [recognize] minus extraction: results are emitted strictly in window
+     * order and cancellation stops the pipeline at the current stage.
      */
-    internal fun recognizeLandmarks(frames: Flow<LandmarkFrame>): Flow<SignResult> {
+    fun recognizeLandmarks(frames: Flow<LandmarkFrame>): Flow<SignResult> {
         return segmenter.segment(frames).map { window -> classify(window) }.flowOn(dispatcher)
     }
 

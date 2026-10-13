@@ -11,6 +11,7 @@ import hk.edu.hkmu.sign.SignClassifierRegistry
 import hk.edu.hkmu.sign.SignTestModels
 import hk.edu.hkmu.sign.model.SignModelCatalog
 import java.io.File
+import java.lang.reflect.Modifier
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emptyFlow
@@ -65,6 +66,31 @@ class SignPipelineTest {
         assertEquals(0L, results.first().windowStartMillis)
         assertEquals(FIRST_WINDOW_END_MILLIS, results.first().windowEndMillis)
         assertEquals(listOf(GLOSS, GLOSS, GLOSS), postProcessor.inputs)
+
+        pipeline.close()
+        registry.close()
+    }
+
+    @Test
+    fun `the public recognizeLandmarks seam emits ordered results from synthetic landmarks`() = runTest {
+        // The seam must be a real public API member (not the `internal` mangled `recognizeLandmarks$sign`).
+        val seam = SignPipeline::class.java.methods.single { it.name == "recognizeLandmarks" }
+        assertTrue(Modifier.isPublic(seam.modifiers))
+
+        val factory = RecordingSignClassifierFactory(SignTestModels.peakLogits(TGCN_CLASSES, GLOSS_INDEX))
+        val registry = registry(factory)
+        SignTestModels.prepare(root, registry.requireSpec(TGCN))
+        val pipeline = pipeline(registry)
+
+        val results = pipeline.recognizeLandmarks(
+            PipelineTestFixtures.streamOf(PipelineTestFixtures.movingStream(FRAMES, TGCN_KEYPOINTS))
+        ).toList()
+
+        assertFalse(results.isEmpty())
+        assertTrue(results.all { it.windowStartMillis <= it.windowEndMillis })
+        results.zipWithNext().forEach { (previous, next) ->
+            assertTrue(previous.windowEndMillis <= next.windowStartMillis)
+        }
 
         pipeline.close()
         registry.close()

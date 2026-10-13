@@ -31,9 +31,10 @@ import java.io.File
  * - a non-commercial model (WLASL-derived TGCN) or a BYO (`UnknownLicense`) model under
  *   `UsageIntent.Commercial` -> [AiAndroidException.LicenseRestricted].
  *
- * The public constructor wires the shipped single runtime ([TfliteSignClassifier]); the `internal`
- * primary constructor takes a [SignClassifierFactory] so host tests can inject a fake and exercise the
- * resolution + gating paths with no native library.
+ * The public constructor wires the shipped single runtime ([TfliteSignClassifier]); the public
+ * [withClassifierFactory] companion factory takes a caller-supplied [SignClassifierFactory] so a host
+ * or headless CI can inject a fake classifier and exercise the same resolution + gating paths — and
+ * the full `SignPipeline` — with no native library.
  *
  * @param modelRoot Directory under which each spec's `directoryName` holds its artifact.
  * @param intent How the host intends to use models; drives the license decision.
@@ -133,5 +134,37 @@ class SignClassifierRegistry internal constructor(
             spec.modelFile
         )
         return SignClassifierHandle(spec, factory.create(spec, modelFile))
+    }
+
+    companion object {
+        /**
+         * Builds a registry that resolves every classifier through [classifierFactory] instead of the
+         * shipped LiteRT runtime ([TfliteSignClassifier]).
+         *
+         * This is the public **device-free injection seam**: a host — or a headless CI through
+         * `:testkit` — supplies a [SignClassifierFactory] (for example one returning a deterministic
+         * fake) and then drives the full segmentation → normalization → classification path through
+         * [hk.edu.hkmu.sign.pipeline.SignPipeline.recognizeLandmarks] with no device and no native
+         * library. The catalog, license gate, asset validation and lifecycle behavior are identical to
+         * the shipped constructor; only the graph construction is replaced, so TFLite behavior is
+         * unchanged.
+         *
+         * @param modelRoot Directory under which each spec's `directoryName` holds its artifact.
+         * @param classifierFactory Builds the classifier for a resolved [SignModelSpec].
+         * @param catalog Classifier catalog to register; defaults to [SignModelCatalog.Standard].
+         * @param licensePolicy Gate consulted before any load; defaults to [DefaultLicensePolicy].
+         * @param intent How the host intends to use models; defaults to [UsageIntent.SelfUse].
+         * @param capacity Resident-model capacity; defaults to [ModelRegistry.DEFAULT_CAPACITY].
+         */
+        @Suppress("LongParameterList")
+        fun withClassifierFactory(
+            modelRoot: File,
+            classifierFactory: SignClassifierFactory,
+            catalog: SignModelCatalog = SignModelCatalog.Standard,
+            licensePolicy: LicensePolicy = DefaultLicensePolicy(),
+            intent: UsageIntent = UsageIntent.SelfUse,
+            capacity: Int = ModelRegistry.DEFAULT_CAPACITY
+        ): SignClassifierRegistry =
+            SignClassifierRegistry(modelRoot, catalog, licensePolicy, intent, classifierFactory, capacity)
     }
 }
