@@ -32,3 +32,6 @@ libs/*.aar
 
 # Demo media + non-public sign models: packaged into the demo APK, not committed
 /demo-app/src/main/assets/
+
+# Cross-team handoff documents (hub <-> ai-android); shared out-of-band, never committed
+/docs/handoff/

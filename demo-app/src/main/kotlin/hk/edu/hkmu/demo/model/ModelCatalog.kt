@@ -50,7 +50,7 @@ object ModelCatalog {
         label = "TTS · lexicon.txt",
         relativePath = "tts/vits-cantonese-hf-xiaomaiiwn/lexicon.txt",
         url = "$TTS_BASE/lexicon.txt",
-        sha256 = "4099e3a825ce8d742bc6a58801e728539a1cd819f2a36f337d39c28e52950d53"
+        sha256 = "337845cd7ea6221e69684329beda84198dc8678699a4936670a08a9449c84acb"
     )
 
     /** Cantonese VITS text-normalization FST. */
