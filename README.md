@@ -16,7 +16,7 @@ lifecycle, the license gate, and the composed pipelines.
 | `:core`             | yes               | Engine contracts, configuration, DI facade, license policy interface, error taxonomy, model registry, native loader, pipeline composition |
 | `:asr`              | yes               | Streaming speech-to-text engine (sherpa-onnx SenseVoice)                                                                                  |
 | `:tts`              | yes               | Streaming text-to-speech engine (sherpa-onnx VITS)                                                                                        |
-| `:diarize`          | yes               | Offline local speaker diarization (sherpa-onnx pyannote segmentation + speaker embedding)                                                 |
+| `:diarize`          | yes               | Offline local speaker diarization + voiceprint enrollment (sherpa-onnx pyannote segmentation + speaker embedding)                         |
 | `:translate`        | yes               | Text translation engine (NLLB-200 INT8 on ONNX Runtime) plus OpenCC script conversion                                                     |
 | `:sign`             | yes               | Sign-language landmark extraction, segmentation, classification, and the frame-to-text facade                                             |
 | `:recombine`        | yes               | Small-LLM recombination post-processor (llama.cpp)                                                                                        |
@@ -42,6 +42,10 @@ fun interface DiarizationEngine {
     fun diarize(audio: Flow<AudioChunk>): Flow<DiarizationSegment>
 }
 
+fun interface SpeakerEmbeddingExtractor {
+    fun extract(audio: Flow<AudioChunk>): Flow<Voiceprint>
+}
+
 fun interface TtsEngine {
     fun synthesize(text: String): Flow<AudioChunk>
 }
@@ -60,7 +64,7 @@ fun interface PostProcessor {
 ```
 
 Supporting value types: `AudioChunk` (normalized Float32 PCM plus a sample rate), `TranscriptionSegment`,
-`DiarizationSegment`, `TranslatedText`, `SignFrame`, and `SignPrediction`. Language is the inline value class `Language`, with
+`DiarizationSegment`, `Voiceprint`, `TranslatedText`, `SignFrame`, and `SignPrediction`. Language is the inline value class `Language`, with
 the constants `Language.Auto`, `English`, `Cantonese`, `Mandarin`, `Japanese`, and `Korean`.
 
 **Diarization runs locally and is optional.** `:diarize` reuses the already-bundled sherpa-onnx
@@ -86,6 +90,36 @@ val attributed = asrSegments.map { segment ->
 }
 ```
 
+**Speaker enrollment runs locally and is optional.** The same `:diarize` module ships a
+`SpeakerEmbeddingExtractor` (also a `fun interface`) that turns one speaker's audio into a reusable
+`Voiceprint`. It reuses the exact CAM++ embedding graph the diarizer bundles — no new native runtime,
+no new dependency. Enroll each known speaker once, then resolve an incoming voiceprint to a display
+name purely by cosine similarity against a threshold.
+
+```kotlin
+val extractor = SherpaSpeakerEmbeddingExtractor.create(
+    config = SpeakerEmbeddingConfig(),
+    modelDir = File(context.filesDir, "diarization")
+)
+
+// Enroll: extract a voiceprint for one speaker's isolated turn and bind it to a name.
+val aliceVoiceprint = extractor.extract(aliceAudio).single()
+val directory = EnrollmentDirectory(threshold = 0.6f).enroll("Alice", aliceVoiceprint)
+
+// Resolve: map an incoming voiceprint to the closest enrolled speaker, or null below threshold.
+val match: SpeakerMatch? = directory.match(extractor.extract(incomingAudio).single())
+val name = match?.displayName ?: "Unknown"
+
+extractor.close()
+```
+
+`EnrollmentDirectory` and `VoiceprintMatcher` are pure Kotlin: they hold no native handle, so a
+directory can be built, persisted and matched entirely on the host JVM. The similarity / threshold /
+match decision is a pure function (`VoiceprintMatcher.cosineSimilarity` and
+`VoiceprintMatcher.bestMatch`). The extractor is license-gated like the other engines, loads its native
+session lazily on the first non-empty audio, is CPU-only, and validates the model asset before any
+native call.
+
 ## Streaming semantics
 
 The flows are cold and ordered. Cancelling collection stops the work and releases the native session;
@@ -107,6 +141,11 @@ input segment, in order, then completes.
 `DiarizationSegment` (start, end, `speakerLabel`) per detected speaker turn, in chronological order,
 then completes; empty audio emits nothing. The license gate, asset check and native diarizer are all
 created lazily at load, when the first non-empty audio reaches the flow.
+
+**Speaker embedding emits one voiceprint per utterance.** `SpeakerEmbeddingExtractor.extract` emits
+exactly one `Voiceprint` for the whole utterance, then completes; empty audio emits nothing. The
+license gate, asset check and native extractor are created lazily at load, when the first non-empty
+audio reaches the flow.
 
 **Sign recognition emits at a window boundary.** `SignEngine.recognize` accumulates frames and emits one
 `SignPrediction` once a full window of `windowSize` frames has been collected, advanced by `stride`.

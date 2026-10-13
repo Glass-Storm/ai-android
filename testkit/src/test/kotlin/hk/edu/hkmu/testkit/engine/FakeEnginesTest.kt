@@ -8,10 +8,12 @@ import hk.edu.hkmu.core.config.PostProcessConfig
 import hk.edu.hkmu.core.config.SignConfig
 import hk.edu.hkmu.core.config.TranslationConfig
 import hk.edu.hkmu.core.config.TtsConfig
+import hk.edu.hkmu.core.engine.AudioChunk
 import hk.edu.hkmu.core.engine.SignFrame
 import hk.edu.hkmu.core.engine.SignPrediction
 import hk.edu.hkmu.core.engine.TranscriptionSegment
 import hk.edu.hkmu.core.engine.TranslatedText
+import hk.edu.hkmu.core.engine.Voiceprint
 import hk.edu.hkmu.core.error.AiAndroidException
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -111,6 +113,20 @@ class FakeEnginesTest {
         assertEquals(1, factory.translationConfigs.size)
         assertEquals("asl", factory.signConfigs.single().classifierId)
         assertEquals(1, factory.postProcessConfigs.size)
+    }
+
+    @Test
+    fun `speaker embedding extractor consumes input and emits voiceprints`() = runTest {
+        val voiceprint = Voiceprint(floatArrayOf(0.1f, 0.2f), modelId = "campplus")
+        val extractor = FakeSpeakerEmbeddingExtractor(listOf(voiceprint))
+        val audio = flowOf(AudioChunk(FloatArray(8)), AudioChunk(FloatArray(4)))
+
+        val emitted = extractor.extract(audio).toList()
+
+        assertEquals(listOf(voiceprint), emitted)
+        assertEquals(12, extractor.consumedSampleCount)
+        assertTrue(extractor.completed)
+        assertFalse(extractor.cancelled)
     }
 
     private fun segment(text: String, startMillis: Long): TranscriptionSegment =

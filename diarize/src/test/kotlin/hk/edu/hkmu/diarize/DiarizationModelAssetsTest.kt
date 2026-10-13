@@ -68,6 +68,40 @@ class DiarizationModelAssetsTest {
             DiarizationModelAssets.ensurePresent(spec, root)
         }
 
+    @Test
+    fun `embedding-only resolution needs no segmentation graph`() {
+        val root = temp.newFolder("models")
+        val embedding = presentEmbedding(root)
+
+        val resolved = DiarizationModelAssets.ensureEmbeddingPresent(spec, root)
+
+        assertEquals(embedding, resolved)
+    }
+
+    @Test
+    fun `missing embedding graph is reported by name on the embedding-only path`() {
+        val root = temp.newFolder("models")
+        presentSegmentation(root)
+
+        val exception = assertThrows(AiAndroidException.ModelAssetMissing::class.java) {
+            DiarizationModelAssets.ensureEmbeddingPresent(spec, root)
+        }
+
+        assertEquals(spec.embeddingFile, exception.missingAsset)
+        assertEquals(spec.id, exception.modelId)
+    }
+
+    @Test
+    fun `model root that is not a directory is rejected on the embedding-only path`() {
+        val missing = File(temp.root, "does-not-exist")
+
+        val exception = assertThrows(AiAndroidException.ModelAssetMissing::class.java) {
+            DiarizationModelAssets.ensureEmbeddingPresent(spec, missing)
+        }
+
+        assertEquals(missing.path, exception.missingAsset)
+    }
+
     private fun presentSegmentation(root: File): File {
         val directory = File(root, spec.segmentationDirectory)
         assertTrue(directory.mkdirs())

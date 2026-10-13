@@ -35,6 +35,22 @@ internal object DiarizationModelAssets {
         )
     }
 
+    /**
+     * Resolves only the speaker-embedding graph for `spec` under `modelDir`.
+     *
+     * The enrollment extractor needs just the embedding model, not the segmentation graph, so this is
+     * a narrower variant of [ensurePresent].
+     *
+     * @throws AiAndroidException.ModelAssetMissing when `modelDir` is not a directory or the embedding
+     *   graph is absent. Never touches native memory.
+     */
+    fun ensureEmbeddingPresent(spec: DiarizationModelSpec, modelDir: File): File {
+        if (!modelDir.isDirectory) {
+            throw AiAndroidException.ModelAssetMissing(spec.id, modelDir.path)
+        }
+        return requireFile(spec, modelDir, spec.embeddingFile)
+    }
+
     private fun requireFile(spec: DiarizationModelSpec, directory: File, name: String): File {
         val file = File(directory, name)
         if (!file.isFile) {
