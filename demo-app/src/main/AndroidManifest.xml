@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Demo app: one launcher activity, a framework theme, plain Views. Needs INTERNET to download
-     the large model weights on demand (see the "Models" section of MainActivity). -->
+     the large model weights on demand (see the "Models" section of MainActivity). CAMERA powers the
+     live-camera gesture example (CameraGestureActivity); the camera feature is optional so the app
+     still installs on a camera-less emulator, where that one screen reports it cannot run. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
         android:allowBackup="false"
@@ -19,6 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="hk.edu.hkmu.demo.camera.CameraGestureActivity"
+            android:exported="false" />
 
     </application>
 

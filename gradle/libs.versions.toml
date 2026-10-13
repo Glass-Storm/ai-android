@@ -41,6 +41,8 @@ onnxruntime = "1.22.0"
 opencc4j = "1.13.1"
 litert = "1.4.2"
 mediapipe = "0.10.26"
+# CameraX (demo-app live-camera example only). Stable line; minSdk 21, so it is satisfied by minSdk 28.
+camerax = "1.4.2"
 # NLLB tokenizer (translation module). Host/JVM SentencePiece JNI per the Wave-0 S1 recipe.
 # NOTE: this artifact ships NO Android native (linux/macOS/Windows only) — see task-15 notepad
 # for the Android tokenizer risk and the `ai.djl.android:tokenizer-native` alternative.
@@ -71,6 +73,11 @@ djl-sentencepiece = { module = "ai.djl.sentencepiece:sentencepiece", version.ref
 litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
 # MediaPipe Tasks Vision (hand/holistic landmarks) — from Google Maven.
 mediapipe-tasks-vision = { module = "com.google.mediapipe:tasks-vision", version.ref = "mediapipe" }
+# CameraX: used only by the demo-app live-camera example to source frames from the camera.
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }

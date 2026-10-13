@@ -59,4 +59,11 @@ dependencies {
         exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
     }
     implementation(libs.kotlinx.coroutines.android)
+
+    // Live-camera example only: CameraX sources frames from the device camera and hands each
+    // analysis frame to the same per-image MediaPipe gesture path the mp4 demo uses.
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 }

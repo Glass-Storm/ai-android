@@ -19,7 +19,7 @@ licence gate, and the composed pipelines.
 `:demo-app` is a small Android app that drives the **real** library engines. Package and applicationId
 are `hk.edu.hkmu.demo`, and the launcher is `hk.edu.hkmu.demo.MainActivity`. It is **arm64-v8a only**.
 
-The UI has two button groups over one scrolling log.
+The UI has three button groups over one scrolling log.
 
 **Models** — one button per model. Each button checks the local file and its SHA-256 and only
 downloads when the file is missing or corrupt (progress is logged every ~5%):
@@ -45,6 +45,32 @@ downloads when the file is missing or corrupt (progress is logged every ~5%):
 6. **Signed manifest**: a tampered manifest fails with `ManifestSignatureInvalid` before any
    descriptor is built.
 7. **OpenCC**: real 繁 to 簡 and back conversion.
+
+### Live camera gesture example (arm64 + camera permission)
+
+A third group, **Live camera**, opens `CameraGestureActivity` — a separate screen that mirrors the
+mp4 gesture demo but sources frames from the **camera** instead of a video file. It is the live
+counterpart of scenario 3 (Sign (video)) — the MediaPipe **per-image** gesture path — not the
+temporal `SignPipeline`.
+
+- **Pipeline** — CameraX `ImageAnalysis` (driven through `LifecycleCameraController`) → each analysis
+  frame is encoded to a **JPEG still** (`ImageProxy` YUV_420_888 → NV21 → `YuvImage.compressToJpeg`)
+  → `BitmapFactory.decodeByteArray` → `MediaPipeGestureRecognizer.recognize(bitmap)`. The recognised
+  label and confidence update live under the `PreviewView`.
+- **Backpressure (the §3 recipe)** — the analyser runs on its own executor and hands each JPEG to a
+  **bounded** channel (capacity 1) with `trySendBlocking`, so a slow recognizer throttles the camera;
+  CameraX then drops superseded frames instead of queuing them unbounded. Every `ImageProxy` is
+  closed in the same pass regardless of the outcome.
+- **Preconditions** — an **arm64 device** (MediaPipe Tasks Vision native is `arm64-v8a` only; the
+  x86_64 emulator cannot run it) and the **camera permission**, requested on first open. The camera
+  `<uses-feature>` is `required="false"`, so the app still installs on a camera-less emulator, where
+  this screen simply reports that it cannot run.
+- **How it differs from the mp4 demo** — the mp4 gesture demo decodes the bundled `demo_sign.mp4`
+  frame by frame with no camera and no throttling; the live screen runs the same per-image
+  recognizer against real camera frames and therefore must apply the bounded-channel recipe to stay
+  bounded. Both call the identical `MediaPipeGestureRecognizer.recognize(bitmap)` entry point and
+  load the same bundled `gesture/gesture_recognizer.task` bundle; neither uses the TGCN/`SignPipeline`
+  classifier.
 
 ## What is REAL
 

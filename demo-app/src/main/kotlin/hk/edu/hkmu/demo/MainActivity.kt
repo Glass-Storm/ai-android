@@ -3,12 +3,14 @@
 package hk.edu.hkmu.demo
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import hk.edu.hkmu.demo.camera.CameraGestureActivity
 import hk.edu.hkmu.demo.model.AssetProvisioner
 import hk.edu.hkmu.demo.model.DemoModel
 import hk.edu.hkmu.demo.model.ModelCatalog
@@ -70,6 +72,8 @@ class MainActivity : Activity() {
             addView(modelButtons())
             addView(title("Scenarios"))
             addView(scenarioButtons())
+            addView(title("Live camera"))
+            addView(cameraButton())
             addView(logView)
         }
         return ScrollView(this).apply { addView(content) }
@@ -104,6 +108,13 @@ class MainActivity : Activity() {
         val button = Button(this)
         button.text = scenario.title
         button.setOnClickListener { runAction(scenario.title, button) { scenario.run() } }
+        return button
+    }
+
+    private fun cameraButton(): Button {
+        val button = Button(this)
+        button.text = "Live — CameraX gesture recognizer (arm64 + camera)"
+        button.setOnClickListener { startActivity(Intent(this, CameraGestureActivity::class.java)) }
         return button
     }
 
