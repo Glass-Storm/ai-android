@@ -47,7 +47,7 @@ kotlin {
 }
 
 // Version of the OPTIONAL Koin container integration (compileOnly; never a hard dependency).
-val koinVersion = "4.0.1"
+val koinVersion = "4.2.2"
 
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
