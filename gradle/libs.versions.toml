@@ -40,7 +40,7 @@ sherpaOnnx = "1.13.8"
 onnxruntime = "1.22.0"
 opencc4j = "1.13.1"
 litert = "1.4.2"
-mediapipe = "0.10.26"
+mediapipe = "1.1.0"
 # CameraX (demo-app live-camera example only). Stable line; minSdk 21, so it is satisfied by minSdk 28.
 camerax = "1.4.2"
 # NLLB tokenizer (translation module). Host/JVM SentencePiece JNI per the Wave-0 S1 recipe.
