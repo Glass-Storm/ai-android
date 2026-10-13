@@ -39,7 +39,7 @@ sherpaOnnx = "1.13.8"
 # 16 KB-page device; 1.22.0 is the earliest 16 KB-aligned (0x4000) release. See todo 30.
 onnxruntime = "1.22.0"
 opencc4j = "1.13.1"
-litert = "1.4.2"
+litert = "2.3.0"
 mediapipe = "0.10.26"
 # CameraX (demo-app live-camera example only). Stable line; minSdk 21, so it is satisfied by minSdk 28.
 camerax = "1.4.2"
