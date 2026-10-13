@@ -73,6 +73,7 @@ dependencies {
     // rules retain the named JNI-bound classes/methods even though nothing here uses them.
     implementation(project(":asr"))
     implementation(project(":tts"))
+    implementation(project(":diarize"))
     implementation(project(":translate"))
     implementation(project(":sign"))
     implementation(project(":recombine"))

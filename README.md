@@ -16,6 +16,7 @@ lifecycle, the license gate, and the composed pipelines.
 | `:core`             | yes               | Engine contracts, configuration, DI facade, license policy interface, error taxonomy, model registry, native loader, pipeline composition |
 | `:asr`              | yes               | Streaming speech-to-text engine (sherpa-onnx SenseVoice)                                                                                  |
 | `:tts`              | yes               | Streaming text-to-speech engine (sherpa-onnx VITS)                                                                                        |
+| `:diarize`          | yes               | Offline local speaker diarization (sherpa-onnx pyannote segmentation + speaker embedding)                                                 |
 | `:translate`        | yes               | Text translation engine (NLLB-200 INT8 on ONNX Runtime) plus OpenCC script conversion                                                     |
 | `:sign`             | yes               | Sign-language landmark extraction, segmentation, classification, and the frame-to-text facade                                             |
 | `:recombine`        | yes               | Small-LLM recombination post-processor (llama.cpp)                                                                                        |
@@ -37,6 +38,10 @@ fun interface AsrEngine {
     fun transcribe(audio: Flow<AudioChunk>): Flow<TranscriptionSegment>
 }
 
+fun interface DiarizationEngine {
+    fun diarize(audio: Flow<AudioChunk>): Flow<DiarizationSegment>
+}
+
 fun interface TtsEngine {
     fun synthesize(text: String): Flow<AudioChunk>
 }
@@ -55,8 +60,31 @@ fun interface PostProcessor {
 ```
 
 Supporting value types: `AudioChunk` (normalized Float32 PCM plus a sample rate), `TranscriptionSegment`,
-`TranslatedText`, `SignFrame`, and `SignPrediction`. Language is the inline value class `Language`, with
+`DiarizationSegment`, `TranslatedText`, `SignFrame`, and `SignPrediction`. Language is the inline value class `Language`, with
 the constants `Language.Auto`, `English`, `Cantonese`, `Mandarin`, `Japanese`, and `Korean`.
+
+**Diarization runs locally and is optional.** `:diarize` reuses the already-bundled sherpa-onnx
+runtime (no new native dependency) to attribute audio to speakers. A host runs `DiarizationEngine.diarize`
+over the same audio it feeds to ASR and folds the labels onto the matching `TranscriptionSegment`
+spans via the additive, default-`null` `speakerLabel`/`speakerId` fields.
+
+```kotlin
+val diarizer = SherpaDiarizationEngine.create(
+    config = DiarizationConfig(),
+    modelDir = File(context.filesDir, "diarization")
+)
+val turns = diarizer.diarize(audio).toList()
+
+// Fold each speaker turn onto the ASR segments that start inside it. `speakerId` is 0-based;
+// `speakerLabel` is its 1-based display form ("Speaker N"). Both are assigned per run, so do not
+// treat them as stable across separate calls.
+val attributed = asrSegments.map { segment ->
+    val turn = turns.firstOrNull {
+        it.startTimeMillis <= segment.startTimeMillis && segment.startTimeMillis < it.endTimeMillis
+    }
+    segment.copy(speakerLabel = turn?.speakerLabel, speakerId = turn?.speakerId)
+}
+```
 
 ## Streaming semantics
 
@@ -74,6 +102,11 @@ utterance. A monophonic `synthesizeInt16` convenience converts to 16-bit PCM at 
 
 **Translation emits text, not tokens.** `TranslationEngine.translate` emits one `TranslatedText` per
 input segment, in order, then completes.
+
+**Diarization emits speaker turns, in order.** `DiarizationEngine.diarize` emits one
+`DiarizationSegment` (start, end, `speakerLabel`) per detected speaker turn, in chronological order,
+then completes; empty audio emits nothing. The license gate, asset check and native diarizer are all
+created lazily at load, when the first non-empty audio reaches the flow.
 
 **Sign recognition emits at a window boundary.** `SignEngine.recognize` accumulates frames and emits one
 `SignPrediction` once a full window of `windowSize` frames has been collected, advanced by `stride`.
@@ -99,6 +132,7 @@ data class EngineRuntimeConfig(
 
 data class AsrConfig(val runtime: EngineRuntimeConfig, val language: Language = Language.Auto, val sampleRateHz: Int = 16_000)
 data class TtsConfig(val runtime: EngineRuntimeConfig, val language: Language, val sampleRateHz: Int, val speakerId: Int = 0)
+data class DiarizationConfig(val runtime: EngineRuntimeConfig, val sampleRateHz: Int = 16_000, val numThreads: Int = 1, val numClusters: Int = AUTO_CLUSTERS, val clusteringThreshold: Float = 0.5f, val minDurationOnSeconds: Float = 0.2f, val minDurationOffSeconds: Float = 0.5f)
 data class TranslationConfig(val runtime: EngineRuntimeConfig, val source: Language, val target: Language, val scriptConversion: Boolean = true)
 data class SignConfig(val classifierId: String, val runtime: EngineRuntimeConfig, val windowSize: Int = 30, val stride: Int = 10, val language: Language)
 data class PostProcessConfig(val recombinationEnabled: Boolean = true, val runtime: EngineRuntimeConfig, val language: Language, val maxInputChars: Int = 512)
@@ -303,8 +337,8 @@ link.
 
 ## Building and verifying
 
-The `:asr` and `:tts` modules resolve the sherpa-onnx Android AAR from a local `libs/` directory
-(`flatDir`). It is a binary and is **not** committed, so fetch it once before building:
+The `:asr`, `:tts`, and `:diarize` modules resolve the sherpa-onnx Android AAR from a local `libs/`
+directory (`flatDir`). It is a binary and is **not** committed, so fetch it once before building:
 
 ```bash
 ./scripts/fetch-sherpa-aar.sh

@@ -35,11 +35,21 @@ fun interface AsrEngine {
  * @property endTimeMillis Segment end, milliseconds from the start of the audio stream.
  * @property isFinal Always true: this engine does not emit partials.
  * @property language Language of [text] when known.
+ * @property speakerLabel Human-readable diarization label for the turn this segment falls in (for
+ *   example `Speaker 1`), or `null` when no speaker attribution is available. Additive and optional:
+ *   engines that do not diarize leave it `null`. This is the 1-based presentation form of
+ *   [speakerId] (`"Speaker ${speakerId + 1}"`).
+ * @property speakerId 0-based diarization id of that speaker (for example `0`), or `null` when no
+ *   speaker attribution is available. [speakerLabel] is the 1-based presentation form; [speakerId]
+ *   is the 0-based key with the same convention as [DiarizationSegment.speakerId]. The underlying
+ *   diarizer assigns indices per run, so a host must not treat either value as stable across calls.
  */
 data class TranscriptionSegment(
     val text: String,
     val startTimeMillis: Long,
     val endTimeMillis: Long,
     val isFinal: Boolean = true,
-    val language: Language? = null
+    val language: Language? = null,
+    val speakerLabel: String? = null,
+    val speakerId: Int? = null
 )

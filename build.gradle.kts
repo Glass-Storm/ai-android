@@ -35,6 +35,7 @@ dependencies {
     dokka(project(":core"))
     dokka(project(":asr"))
     dokka(project(":tts"))
+    dokka(project(":diarize"))
     dokka(project(":translate"))
     dokka(project(":sign"))
     dokka(project(":recombine"))
@@ -242,7 +243,7 @@ tasks.register("verifyNativeAlignment") {
 //     `hk/edu/hkmu/spike` class.
 // The adversarial switch `-Ptask32.probeSpikeAar=<file>` also audits an extra AAR, so a spike
 // module leaking into a published artifact can be shown to FAIL this task (QA failure scenario).
-val publishedModules = listOf("core", "asr", "tts", "translate", "sign", "recombine", "models", "testkit")
+val publishedModules = listOf("core", "asr", "tts", "diarize", "translate", "sign", "recombine", "models", "testkit")
 
 tasks.register("verifyNoSpikeInPublishedGraph") {
     group = "verification"

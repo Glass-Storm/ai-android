@@ -33,6 +33,7 @@ rootProject.name = "ai-android"
 include(":core")
 include(":asr")
 include(":tts")
+include(":diarize")
 include(":translate")
 include(":sign")
 include(":recombine")
