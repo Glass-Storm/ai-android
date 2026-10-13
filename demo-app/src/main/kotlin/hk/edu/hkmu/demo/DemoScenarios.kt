@@ -1,6 +1,7 @@
 package hk.edu.hkmu.demo
 
 import hk.edu.hkmu.demo.scenario.AsrScenario
+import hk.edu.hkmu.demo.scenario.GestureScenario
 import hk.edu.hkmu.demo.scenario.LicenseScenario
 import hk.edu.hkmu.demo.scenario.ManifestScenario
 import hk.edu.hkmu.demo.scenario.RecombineScenario
@@ -20,6 +21,7 @@ object DemoScenarios {
         DemoScenario("5. Translation — real NLLB (expected to fail)") { TranslationScenario.run(environment) },
         DemoScenario("6. Licence gate (DefaultLicensePolicy)") { LicenseScenario.run() },
         DemoScenario("7. Signed manifest (tampered signature)") { ManifestScenario.run() },
-        DemoScenario("8. Script conversion (OpenCC T2S / S2T)") { ScriptScenario.run() }
+        DemoScenario("8. Script conversion (OpenCC T2S / S2T)") { ScriptScenario.run() },
+        DemoScenario("9. Gesture — MediaPipe static gestures (bundled video)") { GestureScenario.run(environment) }
     )
 }

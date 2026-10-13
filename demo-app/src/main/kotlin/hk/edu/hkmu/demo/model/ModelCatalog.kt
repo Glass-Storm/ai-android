@@ -91,6 +91,13 @@ object ModelCatalog {
         bundledAssetPath = "landmarker/holistic_landmarker.task"
     )
 
+    /** MediaPipe static-gesture recognizer bundle, shipped in the APK. */
+    val SIGN_GESTURE_RECOGNIZER = DemoModel(
+        label = "Sign · gesture_recognizer.task (bundled)",
+        relativePath = "gesture/gesture_recognizer.task",
+        bundledAssetPath = "gesture/gesture_recognizer.task"
+    )
+
     /** Bundled Cantonese demo clip for the ASR scenario. */
     val AUDIO_DEMO = DemoModel(
         label = "ASR · demo_yue.wav (bundled)",
@@ -116,6 +123,7 @@ object ModelCatalog {
         LLM_GGUF,
         SIGN_CLASSIFIER,
         SIGN_LANDMARKER,
+        SIGN_GESTURE_RECOGNIZER,
         AUDIO_DEMO,
         VIDEO_DEMO
     )
