@@ -250,4 +250,4 @@ else {
 }
 Write-Host ''
 Write-Info 'Tip: on a pre-warmed machine you may re-run with -Offline to skip dependency lookups.'
-Write-Info 'The engines shown in the demo app are test-kit fakes; see docs/DEMO.md for REAL vs SIMULATED.'
+Write-Info 'The demo app runs the REAL engines; large models download on demand. See docs/DEMO.md.'
