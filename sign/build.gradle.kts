@@ -61,7 +61,14 @@ dependencies {
 
     // MediaPipe Tasks Vision = the landmark EXTRACTOR (Hand/Holistic), NOT the classifier. Android-only
     // JNI (libmediapipe_tasks_vision_jni.so) — host JVM cannot run it, so extraction is Tier B.
-    implementation(libs.mediapipe.tasks.vision)
+    // MediaPipe 0.10.26's AAR is built against the FULL protobuf API (Any.Builder.build() returning
+    // Any) but its POM pulls protobuf-javalite, whose Any$Builder lacks that overload → a runtime
+    // NoSuchMethodError on Any. protobuf-java also bundles GeneratedMessageLite, so it satisfies both
+    // the full and lite call sites. Exclude javalite; supply the full protobuf.
+    implementation(libs.mediapipe.tasks.vision) {
+        exclude(group = "com.google.protobuf", module = "protobuf-javalite")
+    }
+    implementation("com.google.protobuf:protobuf-java:4.26.1")
 
     // LiteRT is the SINGLE shipped sign-CLASSIFIER runtime, distinct from the MediaPipe extractor
     // above. The `litert` AAR carries libtensorflowlite_jni.so and depends transitively on
