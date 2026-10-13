@@ -1,5 +1,8 @@
 // Root build for the ai-android production library.
 // The wave-0 `spike/` project is a SEPARATE Gradle build and is NOT part of this one.
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.application) apply false
@@ -317,6 +320,113 @@ tasks.register("verifyNoSpikeInPublishedGraph") {
         table.forEach { logger.lifecycle(it) }
         if (failures.isNotEmpty()) {
             throw GradleException("spike/ code found in published AAR(s): ${failures.joinToString()}")
+        }
+    }
+}
+
+// --- Publishing to GitHub Packages (handoff §2) ----------------------------------------------
+// Every module in `publishedModules` (defined above) publishes ONE `release` AAR publication under
+// the single group `hk.edu.hkmu`, with `artifactId` equal to the module name and the version taken
+// from the single `version` property in gradle.properties. `consumer-fixture` and `demo-app` are
+// deliberately absent from `publishedModules` and are therefore never published.
+//
+// The logic lives here, applied by name across `publishedModules`, rather than in a `buildSrc` /
+// convention plugin: this repo has neither, and a root-level block is the least invasive change that
+// still keeps every module's publication in ONE place.
+//
+// Credentials are OPTIONAL at configuration time. The GitHub Packages repository reads them from
+// Gradle properties (`github.actor` / `github.token`) or the environment (`GITHUB_ACTOR` /
+// `GITHUB_TOKEN`) and leaves them null when absent, so configuring the build, running
+// `publishToMavenLocal`, and every non-publishing task work with no secrets present. Only a real
+// publish that contacts GitHub Packages requires credentials — none are ever hardcoded.
+val gitHubPackagesUrl = "https://maven.pkg.github.com/Glass-Storm/ai-android"
+
+subprojects {
+    if (publishedModules.contains(name)) {
+        pluginManager.withPlugin("com.android.library") {
+            // Declare the publishable `release` AAR variant. AGP 8 requires opting in before a
+            // `components["release"]` software component exists; sources jar included so the POM
+            // points at real published sources.
+            extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
+                publishing {
+                    singleVariant("release") {
+                        withSourcesJar()
+                    }
+                }
+            }
+
+            apply(plugin = "maven-publish")
+
+            // Publish the POM as the ONLY metadata contract. The generated Gradle Module Metadata
+            // (`.module`) is derived from the raw dependency graph BEFORE `pom.withXml` strips the
+            // vendored `flatDir` sherpa AAR, so it keeps `"group": null, "module":
+            // "sherpa-onnx-1.13.8"` and is unparseable by a consumer
+            // (`Expected a string but was NULL at $.variants[*].dependencies[*].group`). Disabling
+            // the metadata task makes Gradle consumers fall back to the corrected POM.
+            tasks.matching { it.name == "generateMetadataFileForReleasePublication" }
+                .configureEach { enabled = false }
+
+            // AGP registers the `release` component during its own afterEvaluate, so the
+            // publication can only be created once that component exists.
+            afterEvaluate {
+                val releaseComponent = components["release"]
+                // `project.name`, never the bare `name`: inside the publication lambdas below `name`
+                // resolves to `MavenPublication.name` (the publication is literally called
+                // "release"), which would set artifactId/name to "release".
+                val moduleName = project.name
+                extensions.configure<PublishingExtension>("publishing") {
+                    publications {
+                        create<MavenPublication>("release") {
+                            from(releaseComponent)
+                            // `group` is the single source of truth in gradle.properties; derive it
+                            // from the project rather than repeating the literal here.
+                            groupId = project.group.toString()
+                            artifactId = moduleName
+                            version = project.version.toString()
+                            pom {
+                                name.set("ai-android $moduleName")
+                                description.set(
+                                    "ai-android `$moduleName` module of the on-device speech and " +
+                                        "sign-language library."
+                                )
+                                url.set("https://github.com/Glass-Storm/ai-android")
+                            }
+                            // Drop dependency entries without a real coordinate. The vendored
+                            // sherpa-onnx AAR is a `flatDir` module dependency with no group/version
+                            // and ships on no repository, so it can never be resolved from GitHub
+                            // Packages; emitting an empty `<groupId>` would produce an invalid POM.
+                            // (Consumers get that runtime via the pinned composite build — see
+                            // docs/PUBLISHING.md — since it is a source/local artifact.)
+                            pom.withXml {
+                                val dependencies = (asNode().get("dependencies") as groovy.util.NodeList)
+                                    .firstOrNull() as? groovy.util.Node ?: return@withXml
+                                (dependencies.get("dependency") as groovy.util.NodeList)
+                                    .toList()
+                                    .forEach { node ->
+                                        val dependency = node as groovy.util.Node
+                                        val group = (dependency.get("groupId") as groovy.util.NodeList)
+                                            .firstOrNull()?.let { (it as groovy.util.Node).text() }
+                                        if (group.isNullOrBlank()) {
+                                            dependencies.remove(dependency)
+                                        }
+                                    }
+                            }
+                        }
+                    }
+                    repositories {
+                        maven {
+                            name = "GitHubPackages"
+                            url = uri(gitHubPackagesUrl)
+                            credentials {
+                                username = providers.gradleProperty("github.actor").orNull
+                                    ?: providers.environmentVariable("GITHUB_ACTOR").orNull
+                                password = providers.gradleProperty("github.token").orNull
+                                    ?: providers.environmentVariable("GITHUB_TOKEN").orNull
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

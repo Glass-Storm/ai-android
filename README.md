@@ -394,3 +394,9 @@ export JAVA_HOME=/path/to/jdk-21    # a JDK 21 toolchain (AGP 8.13 requires JDK 
 
 The production ABI is `arm64-v8a`. Test ABIs are never shipped, and every vendored native library is
 checked for 16 KB page alignment because Android 15+ devices can require it.
+
+## Publishing
+
+The library publishes to GitHub Packages as `hk.edu.hkmu:<module>:<version>`; see
+[`docs/PUBLISHING.md`](docs/PUBLISHING.md) for coordinates, credentials, and the pinned composite-build
+consumption path. Verify publications locally with `./gradlew publishToMavenLocal`.
