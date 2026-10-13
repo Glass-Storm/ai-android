@@ -303,8 +303,15 @@ link.
 
 ## Building and verifying
 
+The `:asr` and `:tts` modules resolve the sherpa-onnx Android AAR from a local `libs/` directory
+(`flatDir`). It is a binary and is **not** committed, so fetch it once before building:
+
 ```bash
-export JAVA_HOME=<jdk21-home>
+./scripts/fetch-sherpa-aar.sh
+```
+
+```bash
+export JAVA_HOME=/path/to/jdk-21    # a JDK 21 toolchain (AGP 8.13 requires JDK 17+)
 
 ./gradlew testDebugUnitTest ktlintCheck detekt   # unit tests and static analysis
 ./gradlew dokkaHtml                              # API documentation

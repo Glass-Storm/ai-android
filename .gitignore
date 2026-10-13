@@ -22,3 +22,10 @@ local.properties
 # Tool caches (Kotlin daemon, Python/ruff)
 .kotlin/
 .ruff_cache/
+
+# Agent work-state + local dev-env symlink (never published)
+.omo/
+.codegraph
+
+# Vendored binary AAR (fetch via scripts/fetch-sherpa-aar.sh)
+libs/*.aar

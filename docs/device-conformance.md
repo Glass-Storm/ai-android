@@ -9,7 +9,7 @@
 ## 1. How to run
 
 ```bash
-export JAVA_HOME=<jdk21-home>
+export JAVA_HOME=/path/to/jdk-21    # a JDK 21 toolchain
 adb devices -l                       # must list at least one `device`
 ./gradlew connectedAndroidTest       # runs every instrumented suite
 ```
@@ -88,7 +88,7 @@ its input is absent on an otherwise valid device.
       resident (section 4 / todo 29).
 - [ ] **M4 — known gap (documented skip).** The shipped tokenizer (`ai.djl.sentencepiece`) has **no
       Android native**, so `M1` auto-skips with `TIER_B translate SKIPPED: Android NLLB tokenizer
-  unavailable` until the tokenizer ships as a `tokenizer.json` (via `ai.djl.android:tokenizer-native`)
+unavailable` until the tokenizer ships as a `tokenizer.json` (via `ai.djl.android:tokenizer-native`)
       or sentencepiece is built for Android via NDK. See `learnings.md` (task 15).
       Auto-skip: model not provisioned.
 
