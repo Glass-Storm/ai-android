@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Gradle build + version catalog (gradle/libs.versions.toml and the module build scripts).
+  # Minor/patch bumps are grouped into one weekly PR; majors come as individual PRs for review.
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      gradle-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions (no-op until .github/workflows exists, then keeps actions pinned/fresh).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
