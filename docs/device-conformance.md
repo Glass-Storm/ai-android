@@ -86,11 +86,10 @@ its input is absent on an otherwise valid device.
 - [ ] **M2 — translation latency ≤ 3000 ms** per sentence (recorded from the device run).
 - [ ] **M3 — peak PSS ≤ 1600 MB** when NLLB is enabled, **≤ 2200 MB** worst case with the recombine LLM
       resident (section 4 / todo 29).
-- [ ] **M4 — known gap (documented skip).** The shipped tokenizer (`ai.djl.sentencepiece`) has **no
-      Android native**, so `M1` auto-skips with `TIER_B translate SKIPPED: Android NLLB tokenizer
-unavailable` until the tokenizer ships as a `tokenizer.json` (via `ai.djl.android:tokenizer-native`)
-      or sentencepiece is built for Android via NDK. See `learnings.md` (task 15).
-      Auto-skip: model not provisioned.
+- [x] **M4 — RESOLVED.** The tokenizer is now a pure-Kotlin SentencePiece BPE (`SentencePieceBpe`), so
+      `M1` runs on-device with no Android native. Verified on the x86_64 emulator: `en->zh`
+      你好,你今天怎么样? · `zh->en`/`yue->en` Hello, how are you today? · `en->yue` 你好,你今日好嗎?.
+      Auto-skip remains only when the model is not provisioned.
 
 ### 3.5 Sign (MediaPipe landmark extraction → LiteRT classifier)
 
@@ -164,9 +163,8 @@ the shared `ModelRegistry` state.
 
 ## 5. Documented risks carried into Tier B
 
-- **NLLB Android tokenizer (P1).** No Android native for `ai.djl.sentencepiece`; the alternative
-  native consumes `tokenizer.json`, which the NLLB repo does not ship. `M1` therefore skips with a
-  documented reason until a conversion/build lands.
+- **NLLB Android tokenizer — RESOLVED.** Replaced the `ai.djl.sentencepiece` JNI path with a
+  pure-Kotlin SentencePiece BPE (no native). `M1` now runs on-device; see `SentencePieceBpe`.
 - **Sign model provisioning.** The TGCN classifier is WLASL-derived (non-commercial) and the
   landmarker `.task` is ABI-independent — both must be pushed by the host; nothing ships in-tree.
 - **MediaPipe 55-keypoint order / handedness.** Still unverified (see S5).

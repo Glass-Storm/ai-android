@@ -16,9 +16,9 @@ private const val DEMO_TEXT = "你好世界"
  * Scenario: real NLLB translation, best effort.
  *
  * Constructs the real [NllbTranslationEngine] and translates [DEMO_TEXT] from Cantonese to English.
- * This is expected to fail on Android — the NLLB SentencePiece tokenizer has no Android native — so
- * the failure is surfaced clearly rather than hidden. The engine is built lazily and still proves
- * the public constructor/`translate` wiring.
+ * The SentencePiece tokenizer is now a pure-Kotlin BPE with no native library, so translation runs on
+ * Android. The try/catch is kept defensive: any failure is surfaced clearly rather than hidden. The
+ * engine is built lazily and proves the public constructor/`translate` wiring.
  */
 object TranslationScenario {
 
@@ -37,8 +37,7 @@ object TranslationScenario {
         return try {
             render(engine.translate(DEMO_TEXT).toList())
         } catch (error: Throwable) {
-            "translation failed (EXPECTED on Android: the NLLB SentencePiece tokenizer has no Android " +
-                "native): ${describe(error)}"
+            "translation failed: ${describe(error)}"
         } finally {
             engine.close()
         }

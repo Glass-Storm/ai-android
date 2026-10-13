@@ -65,8 +65,8 @@ Everything the app runs is the real library code:
   rejects the fingerspelling `[1, 30, 63]` layout (`ClassifierInputMapping.kt`), so the only video
   path is the TGCN **isolated-word** classifier. The demo prints one gloss per window; it is not a
   translation. The bundled clip is a real ASL sign, not the alphabet.
-- **Translation is expected to fail on Android.** The NLLB SentencePiece tokenizer has no Android
-  native build, so the engine cannot initialize on-device. The scenario runs and reports the failure.
+- **Translation works on Android.** The NLLB tokenizer is now a pure-Kotlin SentencePiece BPE (no
+  native library at all). It is verified on-device in all four prompt directions (`en<->zh`, `en<->yue`).
 - **First run downloads ~0.9 GB.** Nothing large ships in the APK beyond the landmarker, the sign
   classifier, and the demo media.
 
@@ -139,6 +139,6 @@ From an independent review, currently true and worth stating plainly:
   engine; the window comes from the model spec.
 - TTS synthesizes the whole utterance before emitting, so backpressure does not throttle native
   synthesis for that engine.
-- Translation cannot run on Android (no SentencePiece Android native).
+- On the x86_64 emulator, ASR/TTS latency and real-time factor exceed the device budgets (software path); a real arm64 phone is within budget.
 - A single APK that combines `:asr` or `:tts` with `:translate` hits a duplicate `libonnxruntime.so`
   unless ONNX Runtime is excluded. The demo app excludes it.

@@ -1,7 +1,5 @@
 package hk.edu.hkmu.translate.nllb
 
-import ai.djl.sentencepiece.SpProcessor
-import ai.djl.sentencepiece.SpTokenizer
 import hk.edu.hkmu.core.config.Language
 import hk.edu.hkmu.core.error.AiAndroidException
 import java.io.File
@@ -12,33 +10,37 @@ import java.io.File
  * The language ids are read from `tokenizer_config.json`'s `added_tokens_decoder`, never from the
  * model card (the venddair README's `zho_Hans=256167` is wrong; the config's `256200` is correct).
  *
- * Android note: DJL `ai.djl.sentencepiece` ships natives only for linux/macOS/Windows — there is no
- * Android build, so this implementation runs on the host JVM (the path the Wave-0 S1 recipe
- * verified). The Android production path must resolve a `tokenizer.json` through
- * `ai.djl.android:tokenizer-native` instead; see the task-15 evidence and notepad.
+ * The SentencePiece engine is [SentencePieceBpe], a pure-Kotlin BPE that parses `sentencepiece.bpe.model`
+ * and runs the merge itself. There is no JNI, no native library and no Android API, so this tokenizer
+ * runs identically on the host JVM and on Android.
  */
 internal class SentencePieceNllbTokenizer(
     sentencePieceFile: File,
     tokenizerConfigFile: File
 ) : NllbTokenizer {
 
-    private val tokenizer: SpTokenizer = SpTokenizer(sentencePieceFile.toPath())
-    private val processor: SpProcessor = tokenizer.processor
+    private var model: SentencePieceBpe? = SentencePieceBpe.loadModel(sentencePieceFile)
     private val idsByCode: Map<String, Int> = parseLanguageIds(tokenizerConfigFile)
+
+    private val bpe: SentencePieceBpe
+        get() = requireNotNull(model) { "SentencePieceNllbTokenizer is closed" }
 
     override fun languageId(floresCode: String): Int =
         idsByCode[floresCode] ?: throw AiAndroidException.UnsupportedLanguage(Language(floresCode))
 
-    override fun encodeToPieceIds(text: String): IntArray = processor.encode(text)
+    override fun encodeToPieceIds(text: String): IntArray = bpe.encode(text)
 
-    override fun decodeFromPieceIds(pieceIds: IntArray): String = processor.decode(pieceIds)
+    override fun decodeFromPieceIds(pieceIds: IntArray): String = bpe.decode(pieceIds)
 
-    override fun close() = tokenizer.close()
+    /** Drops the parsed model. Idempotent; there is no native memory to release. */
+    override fun close() {
+        model = null
+    }
 }
 
 /**
- * Builds the production tokenizer, validating the model directory against [NllbModelAssets] before
- * it touches the SentencePiece native library.
+ * Builds the production tokenizer, validating the model directory against [NllbModelAssets] before it
+ * parses the SentencePiece model.
  */
 internal class SentencePieceNllbTokenizerFactory(
     private val modelId: String,
