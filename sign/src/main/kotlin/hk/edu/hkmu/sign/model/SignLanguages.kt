@@ -16,4 +16,10 @@ object SignLanguages {
 
     /** Chinese Sign Language. No model is shipped; only the BYO slot is exposed. */
     val Csl: Language = Language("csl")
+
+    /**
+     * Hong Kong Sign Language. No model is shipped by default; the Shuwa translator is provisioned by
+     * the host and described by [hk.edu.hkmu.sign.shuwa.ShuwaModelSpec].
+     */
+    val Hksl: Language = Language("hksl")
 }
