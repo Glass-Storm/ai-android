@@ -1,5 +1,12 @@
 package hk.edu.hkmu.sign.shuwa
 
+import hk.edu.hkmu.core.error.AiAndroidException
+import hk.edu.hkmu.core.license.DefaultLicensePolicy
+import hk.edu.hkmu.core.license.LicenseDecision
+import hk.edu.hkmu.core.license.LicenseKind
+import hk.edu.hkmu.core.license.LicensePolicy
+import hk.edu.hkmu.core.license.ModelLicense
+import hk.edu.hkmu.core.license.UsageIntent
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -31,9 +38,14 @@ data class ShuwaMatch(
  * vectors     vectorCount x dimensions x float16, row-major
  * ```
  *
- * float16 halves the file (about 13.6 MB for the shipped HKSL table) while keeping cosine ranking
- * intact; the reference implementation l2-normalises each embedding part, so squared Euclidean
- * ranking and cosine ranking agree.
+ * float16 halves the file (about 13.6 MB for the full 71-gloss reference table, or about 1.3 MB for
+ * the current eight-gloss demo table) while keeping cosine ranking intact; the reference
+ * implementation l2-normalises each embedding part, so squared Euclidean ranking and cosine ranking
+ * agree.
+ *
+ * The table is host-provisioned, never bundled with the library. [load] evaluates its
+ * [ModelLicense] through the shared [LicensePolicy] before reading the file, so a restricted table
+ * is rejected before any bytes are parsed.
  *
  * Instances are immutable after [load]; construction validates the header, the label ids and the
  * payload length, so a truncated or mislabelled file fails here rather than mid-recognition.
@@ -121,9 +133,28 @@ class ShuwaKnnIndex private constructor(
          * Loads a table produced by the Shuwa exporter.
          *
          * @param file the `SKS1` binary.
+         * @param spec the host-provisioned model description whose license covers the table;
+         *   defaults to `UserProvided` for a host-built table.
+         * @param licensePolicy gate consulted before the file is read.
+         * @param intent self-use vs commercial.
+         * @throws AiAndroidException.LicenseRestricted when the gate refuses the table.
          * @throws IllegalArgumentException when the header, ids or payload length do not agree.
          */
-        fun load(file: File): ShuwaKnnIndex {
+        fun load(
+            file: File,
+            spec: ShuwaModelSpec = ShuwaModelSpec(ModelLicense(LicenseKind.UserProvided)),
+            licensePolicy: LicensePolicy = DefaultLicensePolicy(),
+            intent: UsageIntent = UsageIntent.SelfUse
+        ): ShuwaKnnIndex {
+            when (val decision = licensePolicy.evaluate(spec.license, intent)) {
+                is LicenseDecision.Restricted ->
+                    throw AiAndroidException.LicenseRestricted(
+                        file.name,
+                        decision.license.kind,
+                        decision.intent
+                    )
+                is LicenseDecision.Allowed -> Unit
+            }
             val bytes = file.readBytes()
             val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
             val magic = ByteArray(MAGIC_BYTES)

@@ -350,6 +350,11 @@ commercially-licensed fingerspelling model, because the isolated-ASL classifier 
 non-commercial dataset. Continuous Cantonese Sign Language is a bring-your-own model slot: register your
 own classifier through `UserProvidedModelRegistrar`, and no CSL model ships with the library.
 
+Hong Kong Sign Language (HKSL) is supported through the host-provisioned Shuwa translator and KNN
+table; no HKSL model ships with the library. Both artifacts are described by
+`hk.edu.hkmu.sign.shuwa.ShuwaModelSpec`, and the KNN table is license-gated by
+`ShuwaKnnIndex.load` before it is read.
+
 The recombination stage concatenates and cleans up recognized labels. It is token recombination, not
 sentence generation, and it does not widen the ceiling.
 

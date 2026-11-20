@@ -9,9 +9,10 @@ import hk.edu.hkmu.sign.model.SignLanguages
  *
  * The spec names the model, the sign language it serves and its licence, so a host can record what it
  * provisioned without the engine hardcoding either. Nothing is shipped: the host supplies the
- * `.tflite` translator and the `SKS1` KNN table, and registers this spec with the licence that data
- * actually carries. Google's sample embeddings have no declared upstream licence, so a host that
- * provisions them should use [ModelLicense] kind `UserProvided` / `UnknownLicense`.
+ * `.tflite` translator and the `SKS1` KNN table, and passes this spec to [ShuwaKnnIndex.load] with
+ * the licence that data actually carries. Google's sample embeddings have no declared upstream
+ * licence, so a host that provisions them should use [ModelLicense] kind `UserProvided` /
+ * `UnknownLicense`.
  *
  * @property license Licence attached to the host-provisioned artifacts.
  * @property classifierId Stable id used in logs and diagnostics.

@@ -26,7 +26,9 @@ data class ShuwaRecognizerConfig(
     val confidenceThreshold: Float = DEFAULT_CONFIDENCE_THRESHOLD
 ) {
     init {
-        require(width >= MIN_WIDTH) { "width must be at least $MIN_WIDTH" }
+        require(width == ShuwaSpec.WINDOW_FRAMES) {
+            "width must equal the translator window ${ShuwaSpec.WINDOW_FRAMES}, got $width"
+        }
         require(stride in 1..width) { "stride must be in 1..width" }
     }
 
@@ -39,8 +41,6 @@ data class ShuwaRecognizerConfig(
 
         /** Confidence below which a result is still emitted, but flagged. */
         const val DEFAULT_CONFIDENCE_THRESHOLD: Float = 0.5f
-
-        private const val MIN_WIDTH = 2
     }
 }
 

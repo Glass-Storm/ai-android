@@ -49,6 +49,36 @@ class ShuwaRecognizerTest {
         assertTrue(predictions.first().lowConfidence)
     }
 
+    @Test
+    fun `a completed window is not resampled a second time`() = runTest {
+        var captured: ShuwaInputs? = null
+        val recogniser =
+            ShuwaRecognizer(
+                embedder = ShuwaEmbeddingModel { inputs ->
+                    captured = inputs
+                    floatArrayOf(0f, 1f, 0f)
+                },
+                index = ShuwaKnnIndex.load(table()),
+                config = ShuwaRecognizerConfig(),
+                dispatcher = Dispatchers.Unconfined
+            )
+
+        recogniser.recognize(flowOf(*movingFrames(16).toTypedArray())).toList()
+
+        val inputs = requireNotNull(captured)
+        assertEquals(0f, inputs.pose[0], TOLERANCE)
+        assertEquals(
+            1.5f,
+            inputs.pose[(ShuwaSpec.WINDOW_FRAMES - 1) * ShuwaSpec.POSE_ELEMENTS],
+            TOLERANCE
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `width must match the translator window`() {
+        ShuwaRecognizerConfig(width = 8)
+    }
+
     private fun recogniser(embedding: FloatArray, confidenceThreshold: Float = 0.5f): ShuwaRecognizer = ShuwaRecognizer(
         embedder = ShuwaEmbeddingModel { embedding },
         index = ShuwaKnnIndex.load(table()),
@@ -95,6 +125,7 @@ class ShuwaRecognizerTest {
     }
 
     private companion object {
+        const val TOLERANCE = 1e-4f
         const val FRAME_MILLIS = 66L
         const val BUFFER_BYTES = 256
         const val ROWS = 2

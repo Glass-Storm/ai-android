@@ -1,5 +1,10 @@
 package hk.edu.hkmu.sign.shuwa
 
+import hk.edu.hkmu.core.error.AiAndroidException
+import hk.edu.hkmu.core.license.DefaultLicensePolicy
+import hk.edu.hkmu.core.license.LicenseKind
+import hk.edu.hkmu.core.license.ModelLicense
+import hk.edu.hkmu.core.license.UsageIntent
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -51,6 +56,23 @@ class ShuwaKnnIndexTest {
 
         assertThrows(IllegalArgumentException::class.java) {
             index.match(floatArrayOf(1f, 0f))
+        }
+    }
+
+    @Test
+    fun `a non-commercial table is rejected for commercial use`() {
+        val spec =
+            ShuwaModelSpec(
+                license = ModelLicense(kind = LicenseKind.NonCommercial, spdxId = "CC-BY-NC-4.0")
+            )
+
+        assertThrows(AiAndroidException.LicenseRestricted::class.java) {
+            ShuwaKnnIndex.load(
+                file = table(prefix = "Hksl_"),
+                spec = spec,
+                licensePolicy = DefaultLicensePolicy(),
+                intent = UsageIntent.Commercial
+            )
         }
     }
 

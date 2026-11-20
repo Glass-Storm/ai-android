@@ -79,12 +79,19 @@ object ShuwaPreprocessor {
      * `tick = (n - 2) / pick`, then `index(x) = int(tick / 2 + tick * x) + 1`. For 20 captured frames
      * and a 16-frame window that is `[1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18]`.
      *
+     * A clip that is already exactly [pick] frames is returned unchanged (`0..pick-1`). That is the
+     * [ShuwaRecognizer] case: it hands over a complete window, so applying the sampler a second time
+     * would drop the first/last frames and duplicate middle slots.
+     *
      * @param nFrames Captured frames in the window, at least [MIN_FRAMES].
      * @param pick Output frames; defaults to the translator's window length.
      */
     fun sampleIndices(nFrames: Int, pick: Int = ShuwaSpec.WINDOW_FRAMES): IntArray {
         require(nFrames >= MIN_FRAMES) { "nFrames must be at least $MIN_FRAMES" }
         require(pick > 0) { "pick must be positive" }
+        if (nFrames == pick) {
+            return IntArray(pick) { it }
+        }
         val tick = (nFrames - 2).toDouble() / pick
         return IntArray(pick) { index -> floor(tick / 2.0 + tick * index).toInt() + FIRST_INDEX }
     }
@@ -97,6 +104,12 @@ object ShuwaPreprocessor {
         val rightHand: FloatArray
     )
 
+    /**
+     * Applies the reference visibility masking to one raw frame.
+     *
+     * `LEFT_HAND_IN_POSE` / `RIGHT_HAND_IN_POSE` are positions in [ShuwaSpec.SELECTED_POSE], so they
+     * are resolved through that table before being used against the 33-point BlazePose array.
+     */
     private fun filteredParts(frame: ShuwaFrame): FilteredParts {
         val pose4 = FloatArray(ShuwaSpec.POSE_POINTS * POSE_CHANNELS_WITH_VISIBILITY)
         frame.pose.forEachIndexed { index, point ->
@@ -115,14 +128,22 @@ object ShuwaPreprocessor {
         val right = FloatArray(ShuwaSpec.HAND_POINTS * ShuwaSpec.POSE_CHANNELS)
         copyPoints(frame.rightHand, right, ShuwaSpec.HAND_POINTS)
 
-        val missingLeftPose = isHandMissingFromPose(pose4, ShuwaSpec.LEFT_HAND_IN_POSE)
-        val missingRightPose = isHandMissingFromPose(pose4, ShuwaSpec.RIGHT_HAND_IN_POSE)
-        maskHandInPose(pose4, ShuwaSpec.LEFT_HAND_IN_POSE, missingLeftPose)
-        maskHandInPose(pose4, ShuwaSpec.RIGHT_HAND_IN_POSE, missingRightPose)
+        val missingLeftPose = isHandMissingFromPose(pose4, ShuwaSpec.RAW_LEFT_HAND_IN_POSE)
+        val missingRightPose = isHandMissingFromPose(pose4, ShuwaSpec.RAW_RIGHT_HAND_IN_POSE)
+        maskHandInPose(pose4, ShuwaSpec.RAW_LEFT_HAND_IN_POSE, missingLeftPose)
+        maskHandInPose(pose4, ShuwaSpec.RAW_RIGHT_HAND_IN_POSE, missingRightPose)
 
         // Reference step 2: a zero wrist means the hand landmarks themselves are absent.
-        maskHandInPose(pose4, ShuwaSpec.LEFT_HAND_IN_POSE, left[WRIST_X_OFFSET] == ShuwaSpec.MISSING_VALUE)
-        maskHandInPose(pose4, ShuwaSpec.RIGHT_HAND_IN_POSE, right[WRIST_X_OFFSET] == ShuwaSpec.MISSING_VALUE)
+        maskHandInPose(
+            pose4,
+            ShuwaSpec.RAW_LEFT_HAND_IN_POSE,
+            left[WRIST_X_OFFSET] == ShuwaSpec.MISSING_VALUE
+        )
+        maskHandInPose(
+            pose4,
+            ShuwaSpec.RAW_RIGHT_HAND_IN_POSE,
+            right[WRIST_X_OFFSET] == ShuwaSpec.MISSING_VALUE
+        )
 
         replaceZeros(left)
         replaceZeros(right)

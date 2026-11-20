@@ -19,7 +19,7 @@ object SignLanguages {
 
     /**
      * Hong Kong Sign Language. No model is shipped by default; the Shuwa translator is provisioned by
-     * the host and registered through [hk.edu.hkmu.sign.shuwa.ShuwaModelSpec].
+     * the host and described by [hk.edu.hkmu.sign.shuwa.ShuwaModelSpec].
      */
     val Hksl: Language = Language("hksl")
 }

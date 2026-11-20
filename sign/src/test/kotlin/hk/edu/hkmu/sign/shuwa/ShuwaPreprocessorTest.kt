@@ -25,12 +25,19 @@ class ShuwaPreprocessorTest {
     }
 
     @Test
+    fun `a clip that is already a full window is not resampled`() {
+        assertEquals(
+            (0 until ShuwaSpec.WINDOW_FRAMES).toList(),
+            ShuwaPreprocessor.sampleIndices(nFrames = ShuwaSpec.WINDOW_FRAMES).toList()
+        )
+    }
+
+    @Test
     fun `sampling stays in range for every supported clip length`() {
         for (n in 2..40) {
             val indices = ShuwaPreprocessor.sampleIndices(nFrames = n)
             assertEquals(ShuwaSpec.WINDOW_FRAMES, indices.size)
-            assertTrue("index below 1 for n=$n", indices.all { it >= 1 })
-            assertTrue("index beyond the clip for n=$n", indices.all { it <= n - 1 })
+            assertTrue("index out of range for n=$n", indices.all { it in 0 until n })
         }
     }
 
@@ -59,13 +66,17 @@ class ShuwaPreprocessorTest {
         val frames = frames(20) { 0.1f }
         val window = ShuwaPreprocessor.prepare(frames)
 
-        val leftHandPoseSlot = ShuwaSpec.SELECTED_POSE.indexOf(ShuwaSpec.LEFT_HAND_IN_POSE[0])
+        val leftHandPoseSlot = ShuwaSpec.LEFT_HAND_IN_POSE[0]
         val firstSlotBase = leftHandPoseSlot * ShuwaSpec.POSE_CHANNELS
         assertEquals(ShuwaSpec.IGNORE_VALUE, window.pose[firstSlotBase], TOLERANCE)
 
         // The whole left-hand block for the first slot is masked as well.
         assertEquals(ShuwaSpec.IGNORE_VALUE, window.leftHand[0], TOLERANCE)
         assertEquals(ShuwaSpec.IGNORE_VALUE, window.leftHand[ShuwaSpec.HAND_ELEMENTS - 1], TOLERANCE)
+
+        // The ear at raw BlazePose index 7 is not a hand joint and must not be masked.
+        val earSlot = ShuwaSpec.SELECTED_POSE.indexOf(7)
+        assertEquals(1f, window.pose[earSlot * ShuwaSpec.POSE_CHANNELS], TOLERANCE)
     }
 
     @Test
@@ -95,7 +106,7 @@ class ShuwaPreprocessorTest {
             pose =
             List(ShuwaSpec.POSE_POINTS) { point ->
                 val visibility =
-                    if (point in ShuwaSpec.LEFT_HAND_IN_POSE) leftVisibility(index) else 0.9f
+                    if (point in ShuwaSpec.RAW_LEFT_HAND_IN_POSE) leftVisibility(index) else 0.9f
                 ShuwaPosePoint(
                     x = index.toFloat(),
                     y = point.toFloat(),

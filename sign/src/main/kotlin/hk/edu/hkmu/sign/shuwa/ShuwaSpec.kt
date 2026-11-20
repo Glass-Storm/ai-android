@@ -10,8 +10,10 @@ package hk.edu.hkmu.sign.shuwa
  *
  * Every value here is copied from the reference implementation's configuration
  * (`configs/skeletons.gin`, `configs/utils.gin` and `modules/holistic/holistic_manager.py`) and must
- * not be tuned independently: the shipped weights were trained against exactly these selections,
+ * not be tuned independently: the reference weights were trained against exactly these selections,
  * thresholds and sentinels.
+ *
+ * The index arrays are internal so a host cannot mutate the numeric contract at runtime.
  *
  * @see ShuwaPreprocessor
  */
@@ -33,10 +35,10 @@ object ShuwaSpec {
     const val EMBEDDING_DIMENSIONS: Int = 336
 
     /** Pose joints kept from the 33 BlazePose points, in output order. */
-    val SELECTED_POSE: IntArray = intArrayOf(0, 2, 5, 7, 8, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22)
+    internal val SELECTED_POSE: IntArray = intArrayOf(0, 2, 5, 7, 8, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22)
 
     /** Face points kept from the 468-point mesh: nose, lip contour, and both eyes. */
-    val SELECTED_FACE: IntArray =
+    internal val SELECTED_FACE: IntArray =
         intArrayOf(
             1,
             78, 191, 80, 13, 310, 415, 308, 324, 318, 14, 88, 95,
@@ -44,11 +46,19 @@ object ShuwaSpec {
             336, 299, 334, 282, 386, 374
         )
 
-    /** Pose indices that duplicate the LEFT hand, masked out when the hand is unreliable. */
-    val LEFT_HAND_IN_POSE: IntArray = intArrayOf(7, 9, 11, 13)
+    /** Positions in [SELECTED_POSE] that duplicate the LEFT hand. */
+    internal val LEFT_HAND_IN_POSE: IntArray = intArrayOf(7, 9, 11, 13)
 
-    /** Pose indices that duplicate the RIGHT hand, masked out when the hand is unreliable. */
-    val RIGHT_HAND_IN_POSE: IntArray = intArrayOf(8, 10, 12, 14)
+    /** Positions in [SELECTED_POSE] that duplicate the RIGHT hand. */
+    internal val RIGHT_HAND_IN_POSE: IntArray = intArrayOf(8, 10, 12, 14)
+
+    /** Raw BlazePose indices for the LEFT hand in [SELECTED_POSE]. */
+    internal val RAW_LEFT_HAND_IN_POSE: IntArray =
+        LEFT_HAND_IN_POSE.map { SELECTED_POSE[it] }.toIntArray()
+
+    /** Raw BlazePose indices for the RIGHT hand in [SELECTED_POSE]. */
+    internal val RAW_RIGHT_HAND_IN_POSE: IntArray =
+        RIGHT_HAND_IN_POSE.map { SELECTED_POSE[it] }.toIntArray()
 
     /** BlazePose visibility below which a hand is considered missing. */
     const val HAND_VISIBILITY_THRESHOLD: Float = 0.7f
