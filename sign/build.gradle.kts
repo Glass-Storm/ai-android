@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.mediapipe.tasks.vision) {
         exclude(group = "com.google.protobuf", module = "protobuf-javalite")
     }
-    implementation("com.google.protobuf:protobuf-java:4.26.1")
+    implementation("com.google.protobuf:protobuf-java:4.36.2")
 
     // LiteRT is the SINGLE shipped sign-CLASSIFIER runtime, distinct from the MediaPipe extractor
     // above. The `litert` AAR carries libtensorflowlite_jni.so and depends transitively on
